@@ -1,0 +1,35 @@
+{
+  "name": "loga",
+  "version": "0.0.1",
+  "description": "Simple console and file logger - Gaedhlig for 'log'.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jakobgoodnessgracious/loga.git"
+  },
+  "keywords": [
+    "log",
+    "logging",
+    "logger",
+    "node",
+    "console",
+    "file"
+  ],
+  "files": [
+    "index.js"
+  ],
+  "author": "Jakob Giese",
+  "license": "ISC",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "bugs": {
+    "url": "https://github.com/jakobgoodnessgracious/loga/issues"
+  },
+  "homepage": "https://github.com/jakobgoodnessgracious/loga#readme",
+  "dependencies": {
+    "date-fns": "^2.29.3"
+  }
+}
