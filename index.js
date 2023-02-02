@@ -6,7 +6,7 @@ class Wrinkle {
         const { toFile, logDir, logLevel, fileDateFormat, logDateFormat } = opts || {};
         this._toFile = !!toFile || !!logDir;
         this._logDir = logDir || './logs';
-        this._fileDateFormat = fileDateFormat || 'LL-dd-yyy';
+        this._fileDateFormat = fileDateFormat || 'LL-dd-yyyy';
         this._logDateFormat = logDateFormat || 'LL-dd-yyyy H:m:ss.SS';
         this._level = logLevel || process.env.NODE_ENV === 'production' ? 'error' : 'debug';
         // set allowed log func levels  
