@@ -22,7 +22,7 @@ class Wrinkle {
     }
 
     _formatLog(logLevel) {
-        return `${format(Date.now(), DATE_FORMAT)} ${logLevel}:`;
+        return `${format(Date.now(), this._logDateFormat)} ${logLevel}:`;
     }
 
     _getCurrentLogPath = () => {
