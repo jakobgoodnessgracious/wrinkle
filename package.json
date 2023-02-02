@@ -23,7 +23,7 @@
   "author": "Jakob Giese",
   "license": "ISC",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com/jakobgoodnessgracious"
   },
   "bugs": {
     "url": "https://github.com/jakobgoodnessgracious/loga/issues"
