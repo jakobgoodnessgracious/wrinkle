@@ -3,11 +3,11 @@ const { format } = require('date-fns');
 
 class Wrinkle {
     constructor(opts) {
-        const { toFile, logDir, logLevel, fileDateFormat, logDateFormat } = opts || {};
+        const { toFile, logDir, logLevel, fileDateFormat, logDateTimeFormat } = opts || {};
         this._toFile = !!toFile || !!logDir;
         this._logDir = logDir || './logs';
         this._fileDateFormat = fileDateFormat || 'LL-dd-yyyy';
-        this._logDateFormat = logDateFormat || 'LL-dd-yyyy H:m:ss.SS';
+        this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy H:m:ss.SS';
         this._level = logLevel || process.env.NODE_ENV === 'production' ? 'error' : 'debug';
         // set allowed log func levels  
         this._allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
@@ -22,7 +22,7 @@ class Wrinkle {
     }
 
     _formatLog(logLevel) {
-        return `${format(Date.now(), this._logDateFormat)} ${logLevel}:`;
+        return `${format(Date.now(), this._logDateTimeFormat)} ${logLevel}:`;
     }
 
     _getCurrentLogPath = () => {
