@@ -38,17 +38,17 @@ class Wrinkle {
             if (!fs.existsSync(this._logDir)) {
                 try {
                     fs.mkdirSync(this._logDir);
-                    this.debug('Created directory:', this._logDir);
+                    this.debug('wrinkle: Created directory:', `'${this._logDir}'`, 'for logging.');
                 } catch (err) {
-                    this.error('Error occurred while attempting to create directory:', this._logDir);
+                    this.error('wrinkle: Encountered an error while attempting to create directory:', `'${this._logDir}'`);
                     // handle error
                 }
             } else {
-                this.debug('Directory', this._logDir, 'already exists, not creating a new one.');
+                this.debug('wrinkle: Directory', `'${this._logDir}'`, 'already exists, not creating a new one.');
             }
 
         } else {
-            this.error(`LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
+            this.error(`wrinkle: LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
             process.exit();
         }
     }
