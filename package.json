@@ -1,13 +1,13 @@
 {
-  "name": "loga",
+  "name": "wrinkle",
   "version": "0.0.1",
-  "description": "Simple console and file logger - Gaedhlig for 'log'.",
+  "description": "Simple console and file logger.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jakobgoodnessgracious/loga.git"
+    "url": "git+https://github.com/jakobgoodnessgracious/wrinkle.git"
   },
   "keywords": [
     "log",
@@ -23,9 +23,9 @@
   "author": "Jakob Giese",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/jakobgoodnessgracious/loga/issues"
+    "url": "https://github.com/jakobgoodnessgracious/wrinkle/issues"
   },
-  "homepage": "https://github.com/jakobgoodnessgracious/loga#readme",
+  "homepage": "https://github.com/jakobgoodnessgracious/wrinkle#readme",
   "dependencies": {
     "date-fns": "^2.29.3"
   }

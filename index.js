@@ -1,16 +1,13 @@
 var fs = require('fs');
 const { format } = require('date-fns');
-const DATE_FORMAT = 'LL-dd-yyyy H:m:ss.SS';
-const NODE_ENV = process.env.NODE_ENV;
 
-// move this and dependencies to its own module.
-// then export as logger from sharedLogger out of a different file;
-class Loga {
+class Wrinkle {
     constructor(opts) {
-        const { toFile, logDir, logLevel, fileDateFormat } = opts || {};
+        const { toFile, logDir, logLevel, fileDateFormat, logDateFormat } = opts || {};
         this._toFile = !!toFile || !!logDir;
         this._logDir = logDir || './logs';
         this._fileDateFormat = fileDateFormat || 'LL-dd-yyy';
+        this._logDateFormat = logDateFormat || 'LL-dd-yyyy H:m:ss.SS';
         this._level = logLevel || process.env.NODE_ENV === 'production' ? 'error' : 'debug';
         // set allowed log func levels  
         this._allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
@@ -90,4 +87,4 @@ class Loga {
     }
 }
 
-module.exports = Loga;
+module.exports = Wrinkle;
