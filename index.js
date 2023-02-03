@@ -3,21 +3,24 @@ const { format } = require('date-fns');
 
 class Wrinkle {
     constructor(opts) {
-        const { toFile, logDir, logLevel, fileDateFormat, logDateTimeFormat } = opts || {};
+        const { toFile, logDir, logLevel, fileDateFormat, logDateTimeFormat, maxLogFileSizeBytes } = opts || {};
         this._toFile = !!toFile || !!logDir;
         this._logDir = logDir || './logs';
         this._fileDateFormat = fileDateFormat || 'LL-dd-yyyy';
         this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy H:m:ss.SS';
         this._level = logLevel || process.env.NODE_ENV === 'production' ? 'error' : 'debug';
+        this._maxLogFileSizeBytes = maxLogFileSizeBytes || null;
         // set allowed log func levels  
         this._allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
             if (array.indexOf(this._level) >= index) {
                 accumulator.push(currentValue);
             }
             return accumulator;
-        }, [])
+        }, []);
+        this._lastLogFileName = '';
+        this._sizeVersion = 1;
 
-        this._logFileStream = fs.createWriteStream(this._getCurrentLogPath(), { flags: 'a' });
+        this._logFileStream = fs.createWriteStream(this._getCurrentLogPath() + '.log', { flags: 'a' });
         this._makeLogDir();
     }
 
@@ -26,7 +29,7 @@ class Wrinkle {
     }
 
     _getCurrentLogPath = () => {
-        return this._logDir + '/' + format(Date.now(), this._fileDateFormat) + '.log';
+        return `${this._logDir}/${format(Date.now(), this._fileDateFormat)}`;
     }
 
     _guardLevel(logFuncLevel) {
@@ -53,9 +56,43 @@ class Wrinkle {
         }
     }
 
+    _getFilesizeInBytes(filename) {
+        var stats = fs.statSync(filename);
+        var fileSizeInBytes = stats.size;
+        return fileSizeInBytes;
+    }
+
+
     _writeToFile(text) {
-        this._logFileStream.path = this._getCurrentLogPath();
+        let currentLogFileName = this._getCurrentLogPath();
+
+        if (this._maxLogFileSizeBytes) {
+
+            if (!fs.existsSync(currentLogFileName + '.log')) {
+                this._sizeVersion = 1;
+            } else {
+                const fileToCheck = fs.existsSync(currentLogFileName + '--' + this._sizeVersion + '.log')
+                    ? currentLogFileName + '--' + this._sizeVersion + '.log'
+                    : currentLogFileName + '.log';
+                const fileSizeBytes = this._getFilesizeInBytes(fileToCheck);
+                if (fileSizeBytes > this._maxLogFileSizeBytes) {
+                    currentLogFileName = currentLogFileName + '--' + this._sizeVersion;
+                    this._sizeVersion += 1;
+                } else {
+                    [currentLogFileName] = fileToCheck.split('.log');
+                }
+            }
+
+        }
+        currentLogFileName += '.log';
+        if (this._lastLogFileName !== currentLogFileName) {
+            this._logFileStream.destroy();
+            this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
+            this._lastLogFileName = currentLogFileName;
+        }
+
         this._logFileStream.write(text);
+
     }
 
     _handleLog(level, ...textAsParams) {
