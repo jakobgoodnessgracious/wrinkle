@@ -21,7 +21,7 @@
     "index.js"
   ],
   "author": "Jakob Giese",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/jakobgoodnessgracious/wrinkle/issues"
   },
