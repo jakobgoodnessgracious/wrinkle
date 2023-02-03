@@ -3,14 +3,15 @@ const { format } = require('date-fns');
 
 class Wrinkle {
     constructor(opts) {
-        const { toFile, logDir, logLevel, fileDateFormat, logDateTimeFormat, maxLogFileSizeBytes } = opts || {};
+        const { toFile, logDir, logLevel, fileDateTimeFormat, logDateTimeFormat, maxLogFileSizeBytes, unsafeMode } = opts || {};
         this._toFile = !!toFile || !!logDir;
         this._logDir = logDir || './logs';
-        this._fileDateFormat = fileDateFormat || 'LL-dd-yyyy';
-        this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy H:m:ss.SS';
+        this._fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
+        this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy HH:mm:ss.SS';
         this._level = logLevel || process.env.NODE_ENV === 'production' ? 'error' : 'debug';
         this._maxLogFileSizeBytes = maxLogFileSizeBytes || null;
-        // set allowed log func levels  
+        this._unsafeMode = !!unsafeMode;
+        // set allowed log func levels
         this._allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
             if (array.indexOf(this._level) >= index) {
                 accumulator.push(currentValue);
@@ -29,7 +30,7 @@ class Wrinkle {
     }
 
     _getCurrentLogPath = () => {
-        return `${this._logDir}/${format(Date.now(), this._fileDateFormat)}`;
+        return `${this._logDir}/${format(Date.now(), this._fileDateTimeFormat)}`;
     }
 
     _guardLevel(logFuncLevel) {
@@ -37,22 +38,22 @@ class Wrinkle {
     }
 
     _makeLogDir() {
-        if (!this._logDir.startsWith('/') && !this._logDir.includes('..')) {
-            if (!fs.existsSync(this._logDir)) {
-                try {
-                    fs.mkdirSync(this._logDir);
-                    this.debug('[wrinkle] Created directory:', `'${this._logDir}'`, 'for logging.');
-                } catch (err) {
-                    this.error('[wrinkle] Encountered an error while attempting to create directory:', `'${this._logDir}'`);
-                    // handle error
-                }
-            } else {
-                this.debug('[wrinkle] Directory', `'${this._logDir}'`, 'already exists, not creating a new one.');
-            }
-
-        } else {
+        if (!this._unsafeMode && (this._logDir.startsWith('/') || this._logDir.includes('..'))) {
             this.error(`[wrinkle] LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
-            process.exit();
+            process.exitCode = 1;
+            return;
+        }
+
+        if (!fs.existsSync(this._logDir)) {
+            try {
+                fs.mkdirSync(this._logDir);
+                this.debug('[wrinkle] Created directory:', `'${this._logDir}'`, 'for logging.');
+            } catch (err) {
+                this.error('[wrinkle] Encountered an error while attempting to create directory:', `'${this._logDir}'`);
+                process.exitCode = 1;
+            }
+        } else {
+            this.debug('[wrinkle] Directory', `'${this._logDir}'`, 'already exists, not creating a new one.');
         }
     }
 
