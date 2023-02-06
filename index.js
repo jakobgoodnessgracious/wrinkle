@@ -4,7 +4,7 @@ const { format } = require('date-fns');
 class Wrinkle {
     constructor(opts) {
         const { toFile, logDir, logLevel, fileDateTimeFormat, logDateTimeFormat, maxLogFileSizeBytes, unsafeMode } = opts || {};
-        this._toFile = !!toFile || !!logDir;
+        this._toFile = !!toFile;
         this._logDir = logDir || './logs';
         this._fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
         this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy HH:mm:ss.SS';
@@ -23,7 +23,10 @@ class Wrinkle {
 
         this._logFileStream = fs.createWriteStream(this._getCurrentLogPath() + '.log', { flags: 'a' });
         this._setLastWroteFileName();
-        this._makeLogDir();
+
+        if (this._toFile) {
+            this._makeLogDir();
+        }
     }
 
     _setLastWroteFileName() {

@@ -4,7 +4,8 @@
   "description": "Simple console and file logger.",
   "scripts": {
     "test": "jest",
-    "watch-test": "jest --watch --silent=false && rm -r logs"
+    "watch-test": "jest --watch --silent=false",
+    "publish": "npm test && npm publish"
   },
   "repository": {
     "type": "git",
