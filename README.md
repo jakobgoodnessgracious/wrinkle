@@ -14,7 +14,10 @@ const Wrinkle = require('wrinkle');
 
 const logger = new Wrinkle({ toFile: true, logLevel: 'debug' });
 
-logger.debug('Hello world');
+logger.debug('Entered spinCogs().');
+logger.info('All cogs started successfully.');
+logger.warn('Something is burning, somewhere. . .');
+logger.error('Boom.');
 ```
 
 ## Other Usage
