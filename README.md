@@ -27,7 +27,8 @@ logger.debug('cog', JSON.stringify({ rotations: 9372, screeches: 1941 }));
 Make a file (logger.js or otherwise) in the directory of your choosing. Export the wrinkle logger.
 ```js
 const Wrinkle = require('wrinkle');
-const logger = new Wrinkle({ toFile: true, logLevel: process.env.LOG_LEVEL, fileDateTimeFormat: 'LL-dd-yyyy_H-m', maxLogFileSizeBytes: 5000 });
+const logger = new Wrinkle({ toFile: true, logLevel: process.env.LOG_LEVEL, 
+    fileDateTimeFormat: 'LL-dd-yyyy_H-m', maxLogFileSizeBytes: 5000 });
 
 module.exports = logger;
 ```
