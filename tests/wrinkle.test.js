@@ -12,11 +12,9 @@ const runTestWrinkleRunner = (argz, ticksP = 0) => new Promise((resolve) => {
         __dirname,
         './testWrinkleRunner.js',
     );
-    console.log('[testAppFilePath, ...(argz ? argz : [])]', [testAppFilePath, ...(argz ? argz : [])]);
     const testApp = spawn('node', [testAppFilePath, ...(argz ? argz : [])]);
     testApp.stdout.on('data', data => {
         stdoutData.push(data.toString());
-        console.log('stdoutData', stdoutData);
         if (ticks === ticksP) {
             testApp.kill('SIGINT');
             resolve(stdoutData);
