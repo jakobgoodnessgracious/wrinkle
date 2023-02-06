@@ -24,23 +24,25 @@ class Wrinkle {
 
 
         this._logFileStream = fs.createWriteStream(this._getCurrentLogPath() + '.log', { flags: 'a' });
-        this._makeLogDir();
         this._setLastWroteFileName();
+        this._makeLogDir();
     }
+
     _setLastWroteFileName() {
         // tODO simplify
-        const [nonSizeVersioned = '', sizeVersioned = ''] = fs.readdirSync(this._logDir).sort().reverse();
-        console.log('nonSizeVersioned, sizeVersioned', nonSizeVersioned, sizeVersioned);
+        let nonSizeVersioned = '', sizeVersioned = '';
+        try {
+            [nonSizeVersioned = '', sizeVersioned = ''] = fs.readdirSync(this._logDir).sort().reverse();
+        } catch (e) {
+            // handle
+        }
         const [nonSizeVersionedCleaned = ''] = nonSizeVersioned ? nonSizeVersioned.split('.log') : [];
         const [sizeVersionedCleaned = ''] = sizeVersioned ? sizeVersioned.split('.log') : [];
-        console.log('sizeVersionedCleaned', sizeVersionedCleaned);
-        console.log('nonSizeVersionedCleaned', nonSizeVersionedCleaned);
         if (sizeVersionedCleaned.includes(nonSizeVersionedCleaned)) {
             this._lastWroteFileName = sizeVersioned;
         } else {
             this._lastWroteFileName = nonSizeVersioned || '';
         }
-        console.log('setting initial last file name to', this._lastWroteFileName);
     }
 
     _formatLog(logLevel) {
@@ -74,10 +76,10 @@ class Wrinkle {
             this.debug('[wrinkle] Directory', `'${this._logDir}'`, 'already exists, not creating a new one.');
         }
     }
-
     _getFilesizeInBytes(filename) {
-        var stats = fs.statSync(filename);
-        var fileSizeInBytes = stats.size;
+        if (!fs.existsSync(filename)) return 0;
+        const stats = fs.statSync(filename);
+        const fileSizeInBytes = stats.size;
         return fileSizeInBytes;
     }
 
@@ -93,7 +95,7 @@ class Wrinkle {
                 // todo simplify how the logic for setting this works the || 
                 const fileSizeBytes = this._getFilesizeInBytes(this._lastWroteFileName || currentLogFileName + '.log');
                 const textSizeBytes = Buffer.byteLength(text, 'utf8');
-                if (fileSizeBytes + textSizeBytes > this._maxLogFileSizeBytes) {
+                if (fileSizeBytes && (fileSizeBytes + textSizeBytes > this._maxLogFileSizeBytes)) {
                     currentLogFileName = currentLogFileName + '--' + this._sizeVersion;
                     this._sizeVersion += 1;
                 } else {
@@ -110,11 +112,12 @@ class Wrinkle {
         }
 
         this._logFileStream.write(text, () => {
-            // console.log('lastwrotefilename', this._logFileStream.path);
             this._lastWroteFileName = this._logFileStream.path;
         });
 
     }
+
+
 
     _handleLog(level, ...textAsParams) {
         if (!this._guardLevel(level)) return;
@@ -126,6 +129,14 @@ class Wrinkle {
         if (this._toFile) {
             this._writeToFile(toWrite);
         }
+    }
+
+    destroy() {
+        this._logFileStream.destroy();
+    }
+
+    create() {
+        this._logFileStream = fs.createWriteStream(this._lastWroteFileName || this._getCurrentLogPath() + '.log', { flags: 'a' });
     }
 
     debug(...textAsParams) {

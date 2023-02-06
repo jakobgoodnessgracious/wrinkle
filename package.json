@@ -3,7 +3,8 @@
   "version": "0.6.2",
   "description": "Simple console and file logger.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "watch-test": "jest --watch --silent=false && rm -r logs"
   },
   "repository": {
     "type": "git",
@@ -28,5 +29,8 @@
   "homepage": "https://github.com/jakobgoodnessgracious/wrinkle#readme",
   "dependencies": {
     "date-fns": "^2.29.3"
+  },
+  "devDependencies": {
+    "jest": "^29.4.1"
   }
 }
