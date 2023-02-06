@@ -20,8 +20,6 @@ class Wrinkle {
         }, []);
         this._lastLogFileName = '';
         this._sizeVersion = 1;
-        // this._lastLogFileName = fs.existsSync(this._logDir) && fs.readdir(this._logDir).sort
-
 
         this._logFileStream = fs.createWriteStream(this._getCurrentLogPath() + '.log', { flags: 'a' });
         this._setLastWroteFileName();
@@ -29,7 +27,7 @@ class Wrinkle {
     }
 
     _setLastWroteFileName() {
-        // tODO simplify
+        // TODO simplify
         let nonSizeVersioned = '', sizeVersioned = '';
         try {
             [nonSizeVersioned = '', sizeVersioned = ''] = fs.readdirSync(this._logDir).sort().reverse();
@@ -76,13 +74,13 @@ class Wrinkle {
             this.debug('[wrinkle] Directory', `'${this._logDir}'`, 'already exists, not creating a new one.');
         }
     }
+
     _getFilesizeInBytes(filename) {
         if (!fs.existsSync(filename)) return 0;
         const stats = fs.statSync(filename);
         const fileSizeInBytes = stats.size;
         return fileSizeInBytes;
     }
-
 
     _writeToFile(text) {
         let currentLogFileName = this._getCurrentLogPath();
@@ -92,7 +90,7 @@ class Wrinkle {
             if (!fs.existsSync(currentLogFileName + '.log')) {
                 this._sizeVersion = 1;
             } else {
-                // todo simplify how the logic for setting this works the || 
+                // TODO simplify how the logic for setting this works the || 
                 const fileSizeBytes = this._getFilesizeInBytes(this._lastWroteFileName || currentLogFileName + '.log');
                 const textSizeBytes = Buffer.byteLength(text, 'utf8');
                 if (fileSizeBytes && (fileSizeBytes + textSizeBytes > this._maxLogFileSizeBytes)) {
@@ -106,7 +104,7 @@ class Wrinkle {
         }
         currentLogFileName += '.log';
         if (this._lastLogFileName !== currentLogFileName) {
-            this._logFileStream.destroy();
+            this._logFileStream.end();
             this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
             this._lastLogFileName = currentLogFileName;
         }
@@ -116,8 +114,6 @@ class Wrinkle {
         });
 
     }
-
-
 
     _handleLog(level, ...textAsParams) {
         if (!this._guardLevel(level)) return;
@@ -131,12 +127,19 @@ class Wrinkle {
         }
     }
 
+    create() {
+        if (this._logFileStream.writableEnded) {
+            this._logFileStream = fs.createWriteStream(this._lastWroteFileName || this._getCurrentLogPath() + '.log', { flags: 'a' });
+        }
+
+    }
+
     destroy() {
         this._logFileStream.destroy();
     }
 
-    create() {
-        this._logFileStream = fs.createWriteStream(this._lastWroteFileName || this._getCurrentLogPath() + '.log', { flags: 'a' });
+    end() {
+        this._logFileStream.end();
     }
 
     debug(...textAsParams) {

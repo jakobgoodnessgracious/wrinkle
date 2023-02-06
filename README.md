@@ -17,6 +17,20 @@ const logger = new Wrinkle({ toFile: true, logLevel: 'debug' });
 logger.debug('Hello world');
 ```
 
+## Other Usage
+```js
+// ...
+
+// will create the write stream, if the stream has ended.
+logger.create();
+
+// destroy the write stream
+logger.destroy();
+
+// end the write stream
+logger.end();
+```
+
 ## Configuration
 | Name          | Default                     |  Description    |
 | ------------- | --------------------------- | --------------- |
@@ -25,5 +39,5 @@ logger.debug('Hello world');
 | `logDir`      | `./logs` | Log directory location. |
 | `fileDateTimeFormat`  | `LL-dd-yyyy` _(daily)_ | Uses date-fns format(). |
 | `logDateTimeFormat` | `LL-dd-yyyy HH:mm:ss.SS` _(02-03-2043 01:07:33.49)_ | Uses date-fns format(). |
-| `maxLogFileSizeBytes` | 5mb _(5000000)_ | Max log file size in bytes. |
+| `maxLogFileSizeBytes` | No max size | Max log file size in bytes. e.g. 5000000 _(5mb)_ |
 | `unsafeMode` | `boolean` | True if you would like to set a log directory location 'above' the current directory. |
