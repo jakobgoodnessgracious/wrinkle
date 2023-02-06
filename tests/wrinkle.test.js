@@ -5,23 +5,48 @@ const { format } = require('date-fns');
 const fileDateTimeFormat = 'LL-dd-yyyy';
 const testLogDir = './logs';
 
-const runTestWrinkleRunner = (argz, ticksP = 0) => new Promise((resolve) => {
-    let stdoutData = [];
-    let ticks = 0;
-    const testAppFilePath = path.join(
-        __dirname,
-        './testWrinkleRunner.js',
-    );
-    const testApp = spawn('node', [testAppFilePath, ...(argz ? argz : [])]);
-    testApp.stdout.on('data', data => {
-        stdoutData.push(data.toString());
-        if (ticks === ticksP) {
-            testApp.kill('SIGINT');
-            resolve(stdoutData);
+// todo, improve this with less setIntervals
+const runTestWrinkleRunner = (argz, ticksP = 0) =>
+    new Promise((resolve) => {
+        let stdoutData = [];
+        let ticks = 0;
+        let waitForDir = argz.includes('-toFile');
+        let dirCreated = waitForDir ? false : true;
+        let ticksDone = false;
+
+        const testAppFilePath = path.join(
+            __dirname,
+            './testWrinkleRunner.js',
+        );
+
+        if (waitForDir) {
+            const interval = setInterval(() => {
+                if (fs.existsSync(testLogDir)) {
+                    dirCreated = true;
+                    clearInterval(interval);
+                }
+            }, 500);
         }
-        ticks += 1;
+
+        const testApp = spawn('node', [testAppFilePath, ...(argz ? argz : [])]);
+
+        testApp.stdout.on('data', data => {
+            stdoutData.push(data.toString());
+            if (ticks === ticksP) {
+                ticksDone = true;
+            }
+            ticks += 1;
+        });
+
+        const interval = setInterval(() => {
+            if (ticksDone && dirCreated) {
+                testApp.kill('SIGINT');
+                resolve(stdoutData);
+                clearInterval(interval);
+            }
+        }, 500);
     });
-});
+
 
 describe('When writing to file and no log directory exists, wrinkle:', () => {
     beforeAll(async () => {
@@ -65,7 +90,6 @@ describe('When not writing to file, wrinkle:', () => {
     });
 
     test('Does not log \'debug: [wrinkle] Created directory: \'./logs\' for logging.\'', () => {
-        // expect(!allDataString.includes(' debug: [wrinkle] Created directory: \'./logs\' for logging.')).toBe(true);
         expect(!allDataStrings[0].includes(' debug: [wrinkle] Created directory: \'./logs\' for logging.')).toBe(true);
     });
 
