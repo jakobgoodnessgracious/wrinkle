@@ -21,10 +21,11 @@ class Wrinkle {
         this._lastLogFileName = '';
         this._sizeVersion = 1;
 
-        this._logFileStream = fs.createWriteStream(this._getCurrentLogPath() + '.log', { flags: 'a' });
-        this._setLastWroteFileName();
+        this._logFileStream = null;
 
         if (this._toFile) {
+            this._logFileStream = fs.createWriteStream(this._getCurrentLogPath() + '.log', { flags: 'a' });
+            this._setLastWroteFileName();
             this._makeLogDir();
         }
     }
@@ -60,7 +61,7 @@ class Wrinkle {
 
     _makeLogDir() {
         if (!this._unsafeMode && (this._logDir.startsWith('/') || this._logDir.includes('..'))) {
-            this.error(`[wrinkle] LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
+            process.stderr(`[wrinkle] LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
             process.exitCode = 1;
             return;
         }
@@ -70,7 +71,7 @@ class Wrinkle {
                 fs.mkdirSync(this._logDir);
                 this.debug('[wrinkle] Created directory:', `'${this._logDir}'`, 'for logging.');
             } catch (err) {
-                this.error('[wrinkle] Encountered an error while attempting to create directory:', `'${this._logDir}'`);
+                process.stderr('[wrinkle] Encountered an error while attempting to create directory:', `'${this._logDir}'`);
                 process.exitCode = 1;
             }
         } else {

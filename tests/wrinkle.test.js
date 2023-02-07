@@ -9,6 +9,7 @@ const testLogDir = './logs';
 const runTestWrinkleRunner = (argz, ticksP = 0) =>
     new Promise((resolve) => {
         let stdoutData = [];
+        let stderrData = []
         let ticks = 0;
         let waitForDir = argz.includes('-toFile');
         let dirCreated = waitForDir ? false : true;
@@ -38,10 +39,14 @@ const runTestWrinkleRunner = (argz, ticksP = 0) =>
             ticks += 1;
         });
 
+        testApp.stderr.on('data', err => {
+            stderrData.push(err.toString());
+        });
+
         const interval = setInterval(() => {
             if (ticksDone && dirCreated) {
                 testApp.kill('SIGINT');
-                resolve(stdoutData);
+                resolve([stdoutData, stderrData]);
                 clearInterval(interval);
             }
         }, 500);
@@ -80,9 +85,9 @@ describe('When writing to file and no log directory exists, wrinkle:', () => {
 });
 
 describe('When not writing to file, wrinkle:', () => {
-    let allDataStrings = [];
+    let allOutStrings, allErrStrings;
     beforeAll(async () => {
-        allDataStrings = await runTestWrinkleRunner(['-log', 'Test debug.']);
+        [allOutStrings, allErrStrings] = await runTestWrinkleRunner(['-log', 'Test debug.']);
     });
 
     test('Creates no \'./logs\' dir.', () => {
@@ -90,11 +95,13 @@ describe('When not writing to file, wrinkle:', () => {
     });
 
     test('Does not log \'debug: [wrinkle] Created directory: \'./logs\' for logging.\'', () => {
-        expect(!allDataStrings[0].includes(' debug: [wrinkle] Created directory: \'./logs\' for logging.')).toBe(true);
+        expect(allErrStrings.length).toBe(0);
+        expect(!allOutStrings[0].includes(' debug: [wrinkle] Created directory: \'./logs\' for logging.')).toBe(true);
     });
 
     test('Logs \'Test debug.\' after running logger.debug(\'Test debug.\');', () => {
-        expect(allDataStrings[0].includes('Test debug.')).toBe(true);
+        expect(allErrStrings.length).toBe(0);
+        expect(allOutStrings[0].includes('Test debug.')).toBe(true);
     });
 
 });

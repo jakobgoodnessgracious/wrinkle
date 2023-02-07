@@ -20,7 +20,7 @@ let logger;
 if (flags['toFile']) {
     logger = new Wrinkle({ logLevel: process.env.LOG_LEVEL, toFile: true, fileDateTimeFormat: 'LL-dd-yyyy', maxLogFileSizeBytes: 5000 });
 } else {
-    logger = new Wrinkle({ logLevel: process.env.LOG_LEVEL, fileDateTimeFormat: 'LL-dd-yyyy', maxLogFileSizeBytes: 5000 });
+    logger = new Wrinkle();
 
 }
 
