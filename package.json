@@ -5,7 +5,7 @@
   "scripts": {
     "test": "jest",
     "watch-test": "jest --watch --silent=false",
-    "publish": "npm test && npm publish"
+    "publish-safely": "npm test && npm publish"
   },
   "repository": {
     "type": "git",
