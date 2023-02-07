@@ -8,12 +8,24 @@ const testLogDir = './logs';
 // todo, improve this with less setIntervals
 const runTestWrinkleRunner = (argz, ticksP = 0) =>
     new Promise((resolve) => {
-        let stdoutData = [];
+        let stdoutData = '';
         let stderrData = []
         let ticks = 0;
-        let waitForDir = argz.includes('-toFile');
+        let waitForDir = argz && argz.includes('-toFile');
         let dirCreated = waitForDir ? false : true;
-        let ticksDone = false;
+        let ticksDone = argz ? false : true;
+        const normalizedArgs = [];
+        if (argz) {
+            argz.forEach((arg) => {
+                if (typeof arg !== 'string') {
+                    arg = JSON.stringify(arg);
+                }
+                normalizedArgs.push(arg);
+            })
+        }
+        if (!ticksP) {
+            ticksP = normalizedArgs.length - 1;
+        }
 
         const testAppFilePath = path.join(
             __dirname,
@@ -29,10 +41,10 @@ const runTestWrinkleRunner = (argz, ticksP = 0) =>
             }, 500);
         }
 
-        const testApp = spawn('node', [testAppFilePath, ...(argz ? argz : [])]);
+        const testApp = spawn('node', [testAppFilePath, ...normalizedArgs]);
 
         testApp.stdout.on('data', data => {
-            stdoutData.push(data.toString());
+            stdoutData += data.toString();
             if (ticks === ticksP) {
                 ticksDone = true;
             }
@@ -46,7 +58,8 @@ const runTestWrinkleRunner = (argz, ticksP = 0) =>
         const interval = setInterval(() => {
             if (ticksDone && dirCreated) {
                 testApp.kill('SIGINT');
-                resolve([stdoutData, stderrData]);
+                // split on newline, rm empty vals after split
+                resolve([stdoutData.split('\n').filter(val => val), stderrData]);
                 clearInterval(interval);
             }
         }, 500);
@@ -54,55 +67,88 @@ const runTestWrinkleRunner = (argz, ticksP = 0) =>
 
 
 describe('When writing to file and no log directory exists, wrinkle:', () => {
-    beforeAll(async () => {
-        await runTestWrinkleRunner(['-toFile']);
-    });
+    describe('On initializing:', () => {
+        beforeAll(async () => {
+            await runTestWrinkleRunner(['-toFile']);
+        });
 
-    afterAll(() => {
-        fs.rmSync(testLogDir, { recursive: true, force: true });
-    });
+        afterAll(() => {
+            fs.rmSync(testLogDir, { recursive: true, force: true });
+        });
 
-    test('Creates the \'./logs\' dir.', () => {
-        expect(fs.existsSync(testLogDir)).toBe(true);
-    });
+        test('Creates the \'./logs\' dir.', () => {
+            expect(fs.existsSync(testLogDir)).toBe(true);
+        });
 
-    test('Creates one log file.', () => {
-        expect(fs.readdirSync(testLogDir).length).toBe(1)
-    });
+        test('Creates one log file.', () => {
+            expect(fs.readdirSync(testLogDir).length).toBe(1)
+        });
 
-    test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
-        const testFileName = format(Date.now(), fileDateTimeFormat) + '.log';
-        const [foundFirstFileName] = fs.readdirSync(testLogDir);
-        expect(foundFirstFileName).toBe(testFileName);
-    });
+        test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            const testFileName = format(Date.now(), fileDateTimeFormat) + '.log';
+            const [foundFirstFileName] = fs.readdirSync(testLogDir);
+            expect(foundFirstFileName).toBe(testFileName);
+        });
 
-    test('Logs the first line: \'[wrinkle] Created directory: \'./logs\' for logging.\'', () => {
-        const searchString = '[wrinkle] Created directory: \'./logs\' for logging.';
-        let hasline = fs.readFileSync(testLogDir + '/' + format(Date.now(), fileDateTimeFormat) + '.log', { encoding: 'utf8', flag: 'r' }).includes(searchString);
-        expect(hasline).toBe(true);
+        test('Logs the first line: \'[wrinkle] Created directory: \'./logs\' for logging.\'', () => {
+            const searchString = '[wrinkle] Created directory: \'./logs\' for logging.';
+            let hasline = fs.readFileSync(testLogDir + '/' + format(Date.now(), fileDateTimeFormat) + '.log', { encoding: 'utf8', flag: 'r' }).includes(searchString);
+            expect(hasline).toBe(true);
+        });
     });
-
 });
 
 describe('When not writing to file, wrinkle:', () => {
-    let allOutStrings, allErrStrings;
-    beforeAll(async () => {
-        [allOutStrings, allErrStrings] = await runTestWrinkleRunner(['-log', 'Test debug.']);
+    describe('On initializing:', () => {
+        let allOutStrings, allErrStrings;
+        beforeAll(async () => {
+            [allOutStrings, allErrStrings] = await runTestWrinkleRunner();
+        });
+
+        test('No errors occur in stderr', () => {
+            expect(allErrStrings.length).toBe(0);
+        });
+
+        test('Creates no \'./logs\' dir.', () => {
+            expect(fs.existsSync(testLogDir)).toBe(false);
+        });
+
+        test('Does not log \'debug: [wrinkle] Created directory: \'./logs\' for logging.\'', () => {
+            expect(allOutStrings.length).toBe(0);
+        });
     });
 
-    test('Creates no \'./logs\' dir.', () => {
-        expect(fs.existsSync(testLogDir)).toBe(false);
-    });
+    describe('On logging without any debug level set: ', () => {
+        let allOutStrings, allErrStrings;
+        const toLog =
+            ['debug:Test debug.',
+                'info:Test info.',
+                'warn:Test warn.',
+                'error:Test error.'];
 
-    test('Does not log \'debug: [wrinkle] Created directory: \'./logs\' for logging.\'', () => {
-        expect(allErrStrings.length).toBe(0);
-        expect(!allOutStrings[0].includes(' debug: [wrinkle] Created directory: \'./logs\' for logging.')).toBe(true);
-    });
+        beforeAll(async () => {
+            [allOutStrings, allErrStrings] = await runTestWrinkleRunner(['-log', toLog]);
+        });
 
-    test('Logs \'Test debug.\' after running logger.debug(\'Test debug.\');', () => {
-        expect(allErrStrings.length).toBe(0);
-        expect(allOutStrings[0].includes('Test debug.')).toBe(true);
-    });
+        test('No errors occur in stderr', () => {
+            expect(allErrStrings.length).toBe(0);
+        });
 
+        test('Logs \'debug: Test debug.\'', () => {
+            expect(allOutStrings[0].includes('debug: Test debug.')).toBe(true);
+        });
+
+        test('Logs \'info: Test info.\'', () => {
+            expect(allOutStrings[1].includes('info: Test info.')).toBe(true);
+        });
+
+        test('Logs \'warn: Test warn.\'', () => {
+            expect(allOutStrings[2].includes('warn: Test warn.')).toBe(true);
+        });
+
+        test('Logs \'error: Test error.\'', () => {
+            expect(allOutStrings[3].includes('error: Test error.')).toBe(true);
+        });
+    })
 });
 

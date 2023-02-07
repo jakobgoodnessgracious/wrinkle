@@ -21,9 +21,38 @@ if (flags['toFile']) {
     logger = new Wrinkle({ logLevel: process.env.LOG_LEVEL, toFile: true, fileDateTimeFormat: 'LL-dd-yyyy', maxLogFileSizeBytes: 5000 });
 } else {
     logger = new Wrinkle();
+}
 
+const logAtLevel = (level, text) => {
+    switch (level) {
+        case 'debug':
+            logger.debug(text);
+            break;
+        case 'info':
+            logger.info(text);
+            break;
+        case 'warn':
+            logger.warn(text);
+            break;
+        case 'error':
+            logger.error(text);
+            break;
+        default:
+            logger.debug(level); // no loglevel set - TODO consider handling better
+    }
 }
 
 if (flags['log']) {
-    logger.debug(flags['log']);
+    const logValues = flags['log'];
+    let logs = [];
+    if (Array.isArray(logValues)) {
+        logs = logValues;
+    } else {
+        logs.push(logValues);
+    }
+
+    logs.forEach(log => {
+        const [level, text] = log.split(':');
+        logAtLevel(level, text);
+    })
 }
