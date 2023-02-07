@@ -8,12 +8,12 @@ class Wrinkle {
         this._logDir = logDir || './logs';
         this._fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
         this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy HH:mm:ss.SS';
-        this._level = logLevel || process.env.NODE_ENV === 'production' ? 'error' : 'debug';
+        this._level = logLevel || (process.env.NODE_ENV === 'production' ? 'error' : 'debug');
         this._maxLogFileSizeBytes = maxLogFileSizeBytes || null;
         this._unsafeMode = !!unsafeMode;
         // set allowed log func levels
         this._allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
-            if (array.indexOf(this._level) >= index) {
+            if (array.indexOf(this._level) <= index) {
                 accumulator.push(currentValue);
             }
             return accumulator;
@@ -124,7 +124,11 @@ class Wrinkle {
 
         const toWrite = `${this._formatLog(level)} ${textAsParams.join(' ')}\n`;
 
-        process.stdout.write(toWrite);
+        if (level === 'error') {
+            process.stderr.write(toWrite);
+        } else {
+            process.stdout.write(toWrite);
+        }
 
         if (this._toFile) {
             this._writeToFile(toWrite);
