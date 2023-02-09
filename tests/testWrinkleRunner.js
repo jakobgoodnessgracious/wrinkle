@@ -16,12 +16,8 @@ for (let j = 0; j < process.argv.length; j++) {
     }
 }
 
-let logger;
-if (flags['toFile']) {
-    logger = new Wrinkle({ toFile: true });
-} else {
-    logger = new Wrinkle();
-}
+let logger = new Wrinkle(flags);
+
 
 const logAtLevel = (level, text) => {
     switch (level) {

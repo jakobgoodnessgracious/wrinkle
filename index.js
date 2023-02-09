@@ -94,13 +94,14 @@ class Wrinkle {
                 this._sizeVersion = 1;
             } else {
                 // TODO simplify how the logic for setting this works the || 
-                const fileSizeBytes = this._getFilesizeInBytes(this._lastWroteFileName || currentLogFileName + '.0' + '.log');
+                const fileSizeBytes = this._getFilesizeInBytes(this._lastLogFileName || this._lastWroteFileName || currentLogFileName + '.0' + '.log');
                 const textSizeBytes = Buffer.byteLength(text, 'utf8');
                 if (fileSizeBytes && (fileSizeBytes + textSizeBytes > this._maxLogFileSizeBytes)) {
                     currentLogFileName = currentLogFileName + '.' + this._sizeVersion;
                     this._sizeVersion += 1;
                 } else {
-                    [currentLogFileName] = this._lastWroteFileName.split('.log');
+                    // TODO double check the || statement makes sense
+                    [currentLogFileName] = (this._lastLogFileName || this._lastWroteFileName).split('.log');
                 }
             }
 
@@ -118,6 +119,7 @@ class Wrinkle {
         }
 
         this._logFileStream.write(text, () => {
+            // in case out of sync
             this._lastWroteFileName = this._logFileStream.path;
         });
 

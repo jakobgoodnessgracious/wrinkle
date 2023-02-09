@@ -21,8 +21,10 @@ const POLL_MS = 25;
 
 // TODO Mock
 // TODO improve this with less setIntervals, clean logic, rm ticks
-const runTestWrinkleRunner = (argz, ticksP = 0) =>
+const runTestWrinkleRunner = (argz, opts) =>
     new Promise((resolve) => {
+        let { ticksP = 0, fileVersion = 0 } = opts || {};
+
         let stdoutData = '';
         let stderrData = '';
         let ticks = 0;
@@ -31,6 +33,7 @@ const runTestWrinkleRunner = (argz, ticksP = 0) =>
         let ticksDone = argz ? false : true;
         const normalizedArgs = [];
         let logLength = 0;
+        let doVersion = !!(argz && argz.includes('-maxLogFileSizeBytes'));
         if (argz) {
             argz.forEach((arg, i) => {
                 if (typeof arg !== 'string') {
@@ -77,12 +80,31 @@ const runTestWrinkleRunner = (argz, ticksP = 0) =>
             stderrData += err.toString();
         });
 
+        const getFileLogsMapOrArray = () => {
+            if (!fileVersion && fs.readdirSync(testLogDir).length) {
+                return fs.readFileSync(testLogDir + '/' + format(Date.now(), fileDateTimeFormat) + (doVersion ? `.${fileVersion}` : '') + '.log',
+                    { encoding: 'utf8', flag: 'r' }).split('\n').filter(val => val)
+            }
+
+            return getFileNameLogsMap();
+        }
+
+        const getFileNameLogsMap = () => {
+            const fileNameLogs = new Map();
+            const fileNames = fs.readdirSync(testLogDir).sort();
+            for (const fileName in fileNames) {
+                // const fileVersion
+                fileNameLogs.set(fileName, fs.readFileSync(testLogDir + '/' + fileName,
+                    { encoding: 'utf8', flag: 'r' }).split('\n').filter(val => val));
+            }
+        }
+
         const interval = setInterval(() => {
             if (ticksDone && dirCreated) {
                 testApp.kill('SIGINT');
                 // split on newline, rm empty vals after split
                 resolve([stdoutData.split('\n').filter(val => val), stderrData.split('\n').filter(val => val),
-                waitForDir && logLength ? fs.readFileSync(testLogDir + '/' + format(Date.now(), fileDateTimeFormat) + '.log', { encoding: 'utf8', flag: 'r' }).split('\n').filter(val => val) : []]);
+                waitForDir && logLength ? getFileLogsMapOrArray() : []]);
                 clearInterval(interval);
             }
         }, POLL_MS);
@@ -376,6 +398,119 @@ describe('toFile: true', () => {
                 });
             });
         });
+    });
+
+    describe('maxLogFileSizeBytes: 1000', () => {
+        describe('On logging nothing', () => {
+            let allOutStrings, allErrStrings, allFileStrings;
+            beforeAll(async () => {
+                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-maxLogFileSizeBytes', 1000]);
+            });
+
+            afterAll(() => {
+                fs.rmSync(testLogDir, { recursive: true, force: true });
+            });
+
+
+            test('Creates the \'./logs\' dir.', () => {
+                expect(fs.existsSync(testLogDir)).toBe(true);
+            });
+
+            test('Creates no log files.', () => {
+                expect(fs.readdirSync(testLogDir).length).toBe(0)
+            });
+
+            test('No errors occur in stderr', () => {
+                expect(allErrStrings.length).toBe(0);
+            });
+
+            test('No logs occur in stdout', () => {
+                expect(allOutStrings.length).toBe(0);
+            });
+        });
+
+        describe('On logging a debug, info, warn, error message:', () => {
+            let allOutStrings, allErrStrings, allFileStrings;
+            const toLog =
+                ['debug:Test debug.',
+                    'info:Test info.',
+                    'warn:Test warn.',
+                    'error:Test error.'];
+            beforeAll(async () => {
+                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', [...toLog, ...toLog, ...toLog, ...toLog], '-maxLogFileSizeBytes', 1000]);
+                console.log('allFileStrings', allFileStrings)
+            });
+            afterAll(() => {
+                fs.rmSync(testLogDir, { recursive: true, force: true });
+            });
+
+            test('Creates the \'./logs\' dir.', () => {
+                expect(fs.existsSync(testLogDir)).toBe(true);
+            });
+
+            test('Creates 1 log file.', () => {
+                expect(fs.readdirSync(testLogDir).length).toBe(1)
+            });
+
+            test('Names the log file with the \'LL-dd-yyyy\'.0.log format.', () => {
+                const testFileName = format(Date.now(), fileDateTimeFormat) + '.0.log';
+                const [foundFirstFileName] = fs.readdirSync(testLogDir);
+                expect(foundFirstFileName).toBe(testFileName);
+            });
+
+            test('No errors occur in stderr', () => {
+                expect(allErrStrings.length).toBe(0);
+            });
+
+            describe('Logs to file:', () => {
+                test('\'debug: Test debug.\'', () => {
+                    expect(allFileStrings[0].includes('debug: Test debug.')).toBe(true);
+                });
+
+                test('\'info: Test info.\'', () => {
+                    expect(allFileStrings[1].includes('info: Test info.')).toBe(true);
+                });
+
+                test('\'warn: Test warn.\'', () => {
+                    expect(allFileStrings[2].includes('warn: Test warn.')).toBe(true);
+                });
+
+                test('\'error: Test error.\'', () => {
+                    expect(allFileStrings[3].includes('error: Test error.')).toBe(true);
+                });
+            });
+
+            describe('Logs to stdout:', () => {
+                test('\'debug: Test debug.\'', () => {
+                    expect(allOutStrings[0].includes('debug: Test debug.')).toBe(true);
+                });
+
+                test('\'info: Test info.\'', () => {
+                    expect(allOutStrings[1].includes('info: Test info.')).toBe(true);
+                });
+
+                test('\'warn: Test warn.\'', () => {
+                    expect(allOutStrings[2].includes('warn: Test warn.')).toBe(true);
+                });
+
+                test('\'error: Test error.\'', () => {
+                    expect(allOutStrings[3].includes('error: Test error.')).toBe(true);
+                });
+            });
+        });
+        // TODO incorporate below
+        // if (!fs.existsSync('./logs')) fs.mkdirSync('./logs');
+        // let version = 4;
+        // for (let i = version; i >= 0; i -= 1) {
+        //     console.log('aasdfsda', './logs' + format(Date.now(), fileDateTimeFormat) + '.' + i + '.log')
+        //     fs.writeFileSync('./logs' + '/' + format(Date.now(), fileDateTimeFormat) + '.' + i + '.log', '')
+        // }
+        // const logger = new Wrinkle({ toFile: true, maxLogFileSizeBytes: 5000 });
+        // logger.debug('debug');
+        // logger.info('info');
+        // logger.warn('warn');
+        // logger.error('error');
+
     });
 });
 
