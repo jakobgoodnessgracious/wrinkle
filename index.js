@@ -5,7 +5,7 @@ class Wrinkle {
     constructor(opts) {
         const { toFile, logDir, logLevel, fileDateTimeFormat, logDateTimeFormat, maxLogFileSizeBytes, unsafeMode } = opts || {};
         this._toFile = !!toFile;
-        this._logDir = logDir || './logs';
+        this._logDir = this._setLogDir(logDir);
         this._fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
         this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy HH:mm:ss.SS';
         this._level = logLevel || (process.env.NODE_ENV === 'production' ? 'error' : 'debug'); // test will be debug as well
@@ -24,27 +24,29 @@ class Wrinkle {
         this._logFileStream = null;
 
         if (this._toFile) {
-            this._logFileStream = fs.createWriteStream(this._getCurrentLogPath() + '.log', { flags: 'a' });
             this._setLastWroteFileName();
+            // create the log directory up front. I'd rather fail creating this immediately, 
+            // than farther into application runtime
             this._makeLogDir();
         }
     }
 
+    _setLogDir(logDir) {
+        if (logDir) {
+            return logDir.endsWith('/') ? logDir : logDir + '/';
+        }
+        return './logs/';
+    }
+
     _setLastWroteFileName() {
         // TODO simplify
-        let nonSizeVersioned = '', sizeVersioned = '';
+        let topVersioned = '';
         try {
-            [nonSizeVersioned = '', sizeVersioned = ''] = fs.readdirSync(this._logDir).sort().reverse();
+            [topVersioned] = fs.readdirSync(this._logDir).sort().reverse();
         } catch (e) {
             // handle
         }
-        const [nonSizeVersionedCleaned = ''] = nonSizeVersioned ? nonSizeVersioned.split('.log') : [];
-        const [sizeVersionedCleaned = ''] = sizeVersioned ? sizeVersioned.split('.log') : [];
-        if (sizeVersionedCleaned.includes(nonSizeVersionedCleaned)) {
-            this._lastWroteFileName = sizeVersioned;
-        } else {
-            this._lastWroteFileName = nonSizeVersioned || '';
-        }
+        this._lastWroteFileName = topVersioned ? `${this._logDir}${topVersioned}` : '';
     }
 
     _formatLog(logLevel) {
@@ -52,7 +54,7 @@ class Wrinkle {
     }
 
     _getCurrentLogPath = () => {
-        return `${this._logDir}/${format(Date.now(), this._fileDateTimeFormat)}`;
+        return `${this._logDir}${format(Date.now(), this._fileDateTimeFormat)}`;
     }
 
     _guardLevel(logFuncLevel) {
@@ -69,13 +71,10 @@ class Wrinkle {
         if (!fs.existsSync(this._logDir)) {
             try {
                 fs.mkdirSync(this._logDir);
-                this.debug('[wrinkle] Created directory:', `'${this._logDir}'`, 'for logging.');
             } catch (err) {
                 process.stderr('[wrinkle] Encountered an error while attempting to create directory:', `'${this._logDir}'`);
                 process.exitCode = 1;
             }
-        } else {
-            this.debug('[wrinkle] Directory', `'${this._logDir}'`, 'already exists, not creating a new one.');
         }
     }
 
@@ -88,17 +87,17 @@ class Wrinkle {
 
     _writeToFile(text) {
         let currentLogFileName = this._getCurrentLogPath();
-
         if (this._maxLogFileSizeBytes) {
-
-            if (!fs.existsSync(currentLogFileName + '.log')) {
+            // current date + .log
+            if (!fs.existsSync(currentLogFileName + '.0' + '.log')) {
+                currentLogFileName += '.0';
                 this._sizeVersion = 1;
             } else {
                 // TODO simplify how the logic for setting this works the || 
-                const fileSizeBytes = this._getFilesizeInBytes(this._lastWroteFileName || currentLogFileName + '.log');
+                const fileSizeBytes = this._getFilesizeInBytes(this._lastWroteFileName || currentLogFileName + '.0' + '.log');
                 const textSizeBytes = Buffer.byteLength(text, 'utf8');
                 if (fileSizeBytes && (fileSizeBytes + textSizeBytes > this._maxLogFileSizeBytes)) {
-                    currentLogFileName = currentLogFileName + '--' + this._sizeVersion;
+                    currentLogFileName = currentLogFileName + '.' + this._sizeVersion;
                     this._sizeVersion += 1;
                 } else {
                     [currentLogFileName] = this._lastWroteFileName.split('.log');
@@ -108,9 +107,14 @@ class Wrinkle {
         }
         currentLogFileName += '.log';
         if (this._lastLogFileName !== currentLogFileName) {
-            this._logFileStream.end();
+            if (this._logFileStream) {
+                this._logFileStream.end();
+            }
             this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
             this._lastLogFileName = currentLogFileName;
+            // lazy create stream
+        } else if (!this._logFileStream) {
+            this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
         }
 
         this._logFileStream.write(text, () => {

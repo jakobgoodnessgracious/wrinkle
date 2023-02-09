@@ -16,8 +16,8 @@ const logger = new Wrinkle({ toFile: true, logLevel: 'debug' });
 
 logger.debug('Entered spinCogs().');
 logger.info('All cogs started successfully.');
-logger.warn('Something is burning, somewhere. . .');
-logger.error('Boom.');
+logger.warn('Something is smoldering, somewhere. . .');
+logger.error('The flames, oh the flames!');
 
 // use json stringify for objects
 logger.debug('cog', JSON.stringify({ rotations: 9372, screeches: 1941 }));
@@ -62,6 +62,6 @@ logger.end();
 | `toFile` | `boolean` | Whether or not to write logs to a file. |
 | `logDir`      | `./logs` | Log directory location. |
 | `fileDateTimeFormat`  | `LL-dd-yyyy` _(daily)_ | Uses date-fns format(). |
-| `logDateTimeFormat` | `LL-dd-yyyy HH:mm:ss.SS` _(02-03-2043 01:07:33.49)_ | Uses date-fns format(). |
+| `logDateTimeFormat` | `LL-dd-yyyy HH:mm:ss.SS` _(02-03-2023 01:07:33.49)_ | Uses date-fns format(). |
 | `maxLogFileSizeBytes` | No max size | Max log file size in bytes. e.g. 5000000 _(5mb)_ |
 | `unsafeMode` | `boolean` | True if you would like to set a log directory location 'above' the current directory. |

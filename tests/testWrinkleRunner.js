@@ -18,7 +18,7 @@ for (let j = 0; j < process.argv.length; j++) {
 
 let logger;
 if (flags['toFile']) {
-    logger = new Wrinkle({ logLevel: process.env.LOG_LEVEL, toFile: true, fileDateTimeFormat: 'LL-dd-yyyy', maxLogFileSizeBytes: 5000 });
+    logger = new Wrinkle({ toFile: true });
 } else {
     logger = new Wrinkle();
 }
