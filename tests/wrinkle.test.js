@@ -436,10 +436,11 @@ describe('toFile: true', () => {
                     'info:Test info.',
                     'warn:Test warn.',
                     'error:Test error.'];
+
             beforeAll(async () => {
-                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', [...toLog, ...toLog, ...toLog, ...toLog], '-maxLogFileSizeBytes', 1000]);
-                console.log('allFileStrings', allFileStrings)
+                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog, '-maxLogFileSizeBytes', 1000]);
             });
+
             afterAll(() => {
                 fs.rmSync(testLogDir, { recursive: true, force: true });
             });

@@ -1,9 +1,13 @@
 var fs = require('fs');
-const { format } = require('date-fns');
+const { format, parse, differenceInSeconds,
+    differenceInMonths, differenceInMinutes,
+    differenceInHours, differenceInDays,
+    differenceInWeeks } = require('date-fns');
 
 class Wrinkle {
     constructor(opts) {
-        const { toFile, logDir, logLevel, fileDateTimeFormat, logDateTimeFormat, maxLogFileSizeBytes, unsafeMode } = opts || {};
+        const { toFile, extension, logDir, maxLogFileAge, logLevel, fileDateTimeFormat,
+            logDateTimeFormat, maxLogFileSizeBytes, unsafeMode } = opts || {};
         this._toFile = !!toFile;
         this._logDir = this._setLogDir(logDir);
         this._fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
@@ -11,6 +15,8 @@ class Wrinkle {
         this._level = logLevel || (process.env.NODE_ENV === 'production' ? 'error' : 'debug'); // test will be debug as well
         this._maxLogFileSizeBytes = maxLogFileSizeBytes || null;
         this._unsafeMode = !!unsafeMode;
+        this._extension = extension || '.log';
+        this._maxLogFileAge = maxLogFileAge && typeof maxLogFileAge === 'string' ? maxLogFileAge.trim().toLowerCase() : null;
         // set allowed log func levels
         this._allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
             if (array.indexOf(this._level) <= index) {
@@ -20,6 +26,7 @@ class Wrinkle {
         }, []);
         this._lastLogFileName = '';
         this._sizeVersion = 1;
+        this._rolloverSize = 0;
 
         this._logFileStream = null;
 
@@ -28,6 +35,7 @@ class Wrinkle {
             // create the log directory up front. I'd rather fail creating this immediately, 
             // than farther into application runtime
             this._makeLogDir();
+            this._cleanOutOfDateLogFiles();
         }
     }
 
@@ -47,6 +55,9 @@ class Wrinkle {
             // handle
         }
         this._lastWroteFileName = topVersioned ? `${this._logDir}${topVersioned}` : '';
+        if (this._lastWroteFileName) {
+            this._rolloverSize = this._getFilesizeInBytes(this._lastWroteFileName);
+        }
     }
 
     _formatLog(logLevel) {
@@ -61,9 +72,52 @@ class Wrinkle {
         return this._allowedLogFuncLevels.includes(logFuncLevel);
     }
 
+    _cleanOutOfDateLogFiles() {
+        if (!this._maxLogFileAge || !this._toFile) return;
+        const [numberOf, timeType] = this._maxLogFileAge.split(':');
+        let differenceFunc;
+        if (timeType.includes('month')) {
+            differenceFunc = differenceInMonths;
+        } else if (timeType.includes('week')) {
+            differenceFunc = differenceInWeeks;
+        } else if (timeType.includes('day')) {
+            differenceFunc = differenceInDays;
+        } else if (timeType.includes('hour')) {
+            differenceFunc = differenceInHours;
+        } else if (timeType.includes('minute')) {
+            differenceFunc = differenceInMinutes;
+        } else if (timeType.includes('second')) {
+            differenceFunc = differenceInSeconds;
+        } else {
+            // handle
+            return;
+        }
+        const currentLogFileName = this._getCurrentLogPath().split(this._logDir)[1];
+        const recentOrderedLogFiles = fs.readdirSync(this._logDir).sort().reverse();
+        const currentLogfileDate = parse(currentLogFileName, this._fileDateTimeFormat, new Date());
+        for (const fileName of recentOrderedLogFiles) {
+            const subStringedFileName = fileName.substring(0, fileName.length - this._extension.length - (this._maxLogFileSizeBytes ? ('.' + this._sizeVersion).length : 0));
+            const fileNameDate = parse(subStringedFileName, this._fileDateTimeFormat, new Date());
+            const difference = differenceFunc(currentLogfileDate, fileNameDate);
+            if (difference >= numberOf) {
+                try {
+                    fs.rmSync(this._logDir + fileName);
+                } catch (e) {
+                    // error
+                    this._writeError(`Could not remove out of date log file: ${fileName}`);
+                }
+            }
+        }
+    }
+
+    _writeError(text) {
+        // TODO write the error (text, error)...
+        process.stderr.write(`${format(Date.now(), this._logDateTimeFormat)} [wrinkle]: ${text}\n`);
+    }
+
     _makeLogDir() {
         if (!this._unsafeMode && (this._logDir.startsWith('/') || this._logDir.includes('..'))) {
-            process.stderr(`[wrinkle] LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
+            this._writeError(`[wrinkle] LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
             process.exitCode = 1;
             return;
         }
@@ -72,7 +126,7 @@ class Wrinkle {
             try {
                 fs.mkdirSync(this._logDir);
             } catch (err) {
-                process.stderr('[wrinkle] Encountered an error while attempting to create directory:', `'${this._logDir}'`);
+                this._writeError(`[wrinkle] Encountered an error while attempting to create directory: '${this._logDir}'`);
                 process.exitCode = 1;
             }
         }
@@ -87,34 +141,41 @@ class Wrinkle {
 
     _writeToFile(text) {
         let currentLogFileName = this._getCurrentLogPath();
+
         if (this._maxLogFileSizeBytes) {
             // current date + .log
-            if (!fs.existsSync(currentLogFileName + '.0' + '.log')) {
+            if (!fs.existsSync(currentLogFileName + '.0' + this._extension)) {
                 currentLogFileName += '.0';
                 this._sizeVersion = 1;
+                this._rolloverSize = 0;
             } else {
                 // TODO simplify how the logic for setting this works the || 
-                const fileSizeBytes = this._getFilesizeInBytes(this._lastLogFileName || this._lastWroteFileName || currentLogFileName + '.0' + '.log');
                 const textSizeBytes = Buffer.byteLength(text, 'utf8');
-                if (fileSizeBytes && (fileSizeBytes + textSizeBytes > this._maxLogFileSizeBytes)) {
+                this._rolloverSize += textSizeBytes;
+                if ((this._rolloverSize && (this._rolloverSize + textSizeBytes > this._maxLogFileSizeBytes))) {
+                    this._rolloverSize = 0;
                     currentLogFileName = currentLogFileName + '.' + this._sizeVersion;
                     this._sizeVersion += 1;
                 } else {
                     // TODO double check the || statement makes sense
-                    [currentLogFileName] = (this._lastLogFileName || this._lastWroteFileName).split('.log');
+                    [currentLogFileName] = (this._lastLogFileName || this._lastWroteFileName).split(this._extension);
                 }
             }
 
         }
-        currentLogFileName += '.log';
+        currentLogFileName += this._extension;
+        // new file being made
         if (this._lastLogFileName !== currentLogFileName) {
             if (this._logFileStream) {
                 this._logFileStream.end();
             }
+            if (!fs.existsSync(currentLogFileName)) fs.writeFileSync(currentLogFileName, '');
             this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
             this._lastLogFileName = currentLogFileName;
+            this._cleanOutOfDateLogFiles();
             // lazy create stream
         } else if (!this._logFileStream) {
+            if (!fs.existsSync(currentLogFileName)) fs.writeFileSync(currentLogFileName, '');
             this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
         }
 
@@ -139,10 +200,7 @@ class Wrinkle {
     }
 
     create() {
-        if (this._logFileStream.writableEnded) {
-            this._logFileStream = fs.createWriteStream(this._lastWroteFileName || this._getCurrentLogPath() + '.log', { flags: 'a' });
-        }
-
+        this._logFileStream = fs.createWriteStream(this._lastLogFileName || this._lastWroteFileName || this._getCurrentLogPath() + this._extension, { flags: 'a' });
     }
 
     destroy() {
