@@ -132,8 +132,9 @@ class Wrinkle {
     }
 
     _makeLogDir() {
+        process.stderr.write('here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         if (!this._unsafeMode && (this._logDir.startsWith('/') || this._logDir.includes('..'))) {
-            this._writeError(`[wrinkle] logDir: \'${this._logDir}\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
+            this._writeError(`logDir: \'${this._logDir}\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
             process.exitCode = 1;
             return;
         }
@@ -142,7 +143,7 @@ class Wrinkle {
             try {
                 fs.mkdirSync(this._logDir);
             } catch (err) {
-                this._writeError(`[wrinkle] Encountered an error while attempting to create directory: '${this._logDir}'`);
+                this._writeError(`Encountered an error while attempting to create directory: '${this._logDir}'`);
                 process.exitCode = 1;
             }
         }
@@ -198,6 +199,7 @@ class Wrinkle {
     }
 
     _handleLog(level, ...textAsParams) {
+        if (process.exitCode) return;
         if (!this._guardLevel(level)) return;
 
         const toWrite = `${this._formatLog(level)} ${textAsParams.join(' ')}\n`;
