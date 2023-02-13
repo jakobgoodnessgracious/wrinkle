@@ -72,6 +72,10 @@ class Wrinkle {
         return this._allowedLogFuncLevels.includes(logFuncLevel);
     }
 
+    _isValidDate(d) {
+        return d instanceof Date && !isNaN(d);
+    }
+
     _cleanOutOfDateLogFiles() {
         if (!this._maxLogFileAge || !this._toFile) return;
         const [numberOf, timeType] = this._maxLogFileAge.split(':');
@@ -96,8 +100,8 @@ class Wrinkle {
         const recentOrderedLogFiles = fs.readdirSync(this._logDir).sort().reverse();
         const currentLogfileDate = parse(currentLogFileName, this._fileDateTimeFormat, new Date());
         for (const fileName of recentOrderedLogFiles) {
-            const subStringedFileName = fileName.substring(0, fileName.length - this._extension.length - (this._maxLogFileSizeBytes ? ('.' + this._sizeVersion).length : 0));
-            const fileNameDate = parse(subStringedFileName, this._fileDateTimeFormat, new Date());
+            const fileNameDate = this._parseFileNameDate(fileName);
+
             const difference = differenceFunc(currentLogfileDate, fileNameDate);
             if (difference >= numberOf) {
                 try {
@@ -110,6 +114,18 @@ class Wrinkle {
         }
     }
 
+    _parseFileNameDate(fileName) {
+        let subStringedFileName = fileName.substring(0, fileName.length - this._extension.length - (this._maxLogFileSizeBytes ? ('.' + this._sizeVersion).length : 0));
+        let fileNameDate = parse(subStringedFileName, this._fileDateTimeFormat, new Date());
+
+        if (!this._isValidDate(fileNameDate)) {
+            subStringedFileName = fileName.substring(0, fileName.length - this._extension.length);
+            fileNameDate = parse(subStringedFileName, this._fileDateTimeFormat, new Date());
+        }
+
+        return fileNameDate;
+    }
+
     _writeError(text) {
         // TODO write the error (text, error)...
         process.stderr.write(`${format(Date.now(), this._logDateTimeFormat)} [wrinkle]: ${text}\n`);
@@ -117,7 +133,7 @@ class Wrinkle {
 
     _makeLogDir() {
         if (!this._unsafeMode && (this._logDir.startsWith('/') || this._logDir.includes('..'))) {
-            this._writeError(`[wrinkle] LOG_DIR=${this._logDir} is not a safe path. Exiting...`);
+            this._writeError(`[wrinkle] logDir: \'${this._logDir}\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
             process.exitCode = 1;
             return;
         }
@@ -161,7 +177,6 @@ class Wrinkle {
                     [currentLogFileName] = (this._lastLogFileName || this._lastWroteFileName).split(this._extension);
                 }
             }
-
         }
         currentLogFileName += this._extension;
         // new file being made
@@ -173,10 +188,6 @@ class Wrinkle {
             this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
             this._lastLogFileName = currentLogFileName;
             this._cleanOutOfDateLogFiles();
-            // lazy create stream
-        } else if (!this._logFileStream) {
-            if (!fs.existsSync(currentLogFileName)) fs.writeFileSync(currentLogFileName, '');
-            this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
         }
 
         this._logFileStream.write(text, () => {
@@ -204,7 +215,7 @@ class Wrinkle {
     }
 
     destroy() {
-        this._logFileStream.destroy();
+        if (this._logFileStream) this._logFileStream.destroy();
     }
 
     end() {

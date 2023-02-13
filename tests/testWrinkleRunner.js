@@ -18,7 +18,6 @@ for (let j = 0; j < process.argv.length; j++) {
 
 let logger = new Wrinkle(flags);
 
-
 const logAtLevel = (level, text) => {
     switch (level) {
         case 'debug':
