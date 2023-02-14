@@ -4,6 +4,8 @@ const { format, parse, differenceInSeconds,
     differenceInHours, differenceInDays,
     differenceInWeeks } = require('date-fns');
 
+// TODO CLEAN
+// TODO SafelySet object props
 class Wrinkle {
     constructor(opts) {
         const { toFile, extension, logDir, maxLogFileAge, logLevel, fileDateTimeFormat,

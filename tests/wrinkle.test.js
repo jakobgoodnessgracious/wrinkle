@@ -7,6 +7,7 @@ const FILE_DATE_FORMAT = 'LL-dd-yyyy';
 const FILE_DATE_FORMAT_MINUTES = 'LL-dd-yyyy_H-m';
 const FILE_DATE_FORMAT_SECONDS = 'LL-dd-yyyy-HH-mm-ss';
 const LOG_DATE_TIME_FORMAT = 'LL-dd-yyyy HH:mm:ss.SS';
+const CUSTOM_LOG_DATE_TIME_FORMAT = 'd+yy+LL+HH+mm+ss+SS'
 const TEST_LOG_DIR = './logs';
 const POLL_MS = 25;
 
@@ -17,7 +18,7 @@ const POLL_MS = 25;
 //     expect(hasline).toBe(true);
 // });
 
-isValidParseFormat = (log) => {
+isValidParseFormat = (log, customFormat) => {
     const isValidDate = (d) => {
         return d instanceof Date && !isNaN(d);
     }
@@ -32,7 +33,7 @@ isValidParseFormat = (log) => {
     } else if (log.includes(' error:')) {
         logDateTimeFormat = log.split(' error:')[0];
     }
-    const parsed = parse(logDateTimeFormat, LOG_DATE_TIME_FORMAT, new Date());
+    const parsed = parse(logDateTimeFormat, customFormat || LOG_DATE_TIME_FORMAT, new Date());
     return isValidDate(parsed);
 }
 
@@ -1298,63 +1299,117 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
         });
-    });
 
-    describe('true and logDir \'/logs\' and attempting to log a debug, info, warn, error message:', () => {
-        const logDir = '/logs';
-        let allOutStrings, allErrStrings, allFileStrings;
-        const toLog =
-            ['debug:Test debug.',
-                'info:Test info.',
-                'warn:Test warn.',
-                'error:Test error.'];
 
-        beforeAll(async () => {
-            [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog, '-logDir', logDir, '-unsafeMode', true]);
-        });
+        describe('true and logDir \'/logs\' and attempting to log a debug, info, warn, error message:', () => {
+            const logDir = '/logs';
+            let allOutStrings, allErrStrings, allFileStrings;
+            const toLog =
+                ['debug:Test debug.',
+                    'info:Test info.',
+                    'warn:Test warn.',
+                    'error:Test error.'];
 
-        afterAll(() => {
-            fs.rmSync(logDir, { recursive: true, force: true });
-        });
-
-        test('Creates the \'/logs\' dir.', () => {
-            expect(fs.existsSync(logDir)).toBe(true);
-        });
-
-        test('Creates 1 log file.', () => {
-            expect(fs.readdirSync(logDir)).toHaveLength(1)
-        });
-
-        test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
-            const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
-            const [foundFirstFileName] = fs.readdirSync(logDir);
-            expect(foundFirstFileName).toBe(testFileName);
-        });
-
-        test('No errors occur in stderr', () => {
-            expect(allErrStrings).toHaveLength(0);
-        });
-
-        test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
-            allFileStrings.forEach((log, i) => {
-                // split the debug:Test debug. array to debug: Test debug
-                expect(log).toContain(toLog[i].split(':').join(': '));
-                expect(isValidParseFormat(log)).toBe(true);
-            })
-            expect(allOutStrings).toHaveLength(4);
-        });
-
-        test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
-            allOutStrings.forEach((log, i) => {
-                // split the debug:Test debug. array to debug: Test debug
-                expect(log).toContain(toLog[i].split(':').join(': '));
-                expect(isValidParseFormat(log)).toBe(true);
+            beforeAll(async () => {
+                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog, '-logDir', logDir, '-unsafeMode', true]);
             });
-            expect(allOutStrings).toHaveLength(4);
+
+            afterAll(() => {
+                fs.rmSync(logDir, { recursive: true, force: true });
+            });
+
+            test('Creates the \'/logs\' dir.', () => {
+                expect(fs.existsSync(logDir)).toBe(true);
+            });
+
+            test('Creates 1 log file.', () => {
+                expect(fs.readdirSync(logDir)).toHaveLength(1)
+            });
+
+            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+                const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
+                const [foundFirstFileName] = fs.readdirSync(logDir);
+                expect(foundFirstFileName).toBe(testFileName);
+            });
+
+            test('No errors occur in stderr', () => {
+                expect(allErrStrings).toHaveLength(0);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+                allFileStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log)).toBe(true);
+                })
+                expect(allOutStrings).toHaveLength(4);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+                allOutStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log)).toBe(true);
+                });
+                expect(allOutStrings).toHaveLength(4);
+            });
         });
     });
 
-    // next test: _logDateTimeFormat
+    describe('logDateTimeFormat d+yy+LL+HH+mm+ss+SS', () => {
+        describe('On logging a debug, info, warn, error message:', () => {
+            let allOutStrings, allErrStrings, allFileStrings;
+            const toLog =
+                ['debug:Test debug.',
+                    'info:Test info.',
+                    'warn:Test warn.',
+                    'error:Test error.'];
+
+            beforeAll(async () => {
+                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog, '-logDateTimeFormat', CUSTOM_LOG_DATE_TIME_FORMAT]);
+            });
+
+            afterAll(() => {
+                fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
+            });
+
+            test('Creates the \'./logs\' dir.', () => {
+                expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
+            });
+
+            test('Creates 1 log file.', () => {
+                expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
+            });
+
+            test('Names the log file with the \'LL-dd-yyyy\'.log format.', () => {
+                const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
+                const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
+                expect(foundFirstFileName).toBe(testFileName);
+            });
+
+            test('No errors occur in stderr', () => {
+                expect(allErrStrings).toHaveLength(0);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+                allFileStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log, CUSTOM_LOG_DATE_TIME_FORMAT)).toBe(true);
+                })
+                expect(allOutStrings).toHaveLength(4);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+                allOutStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log, CUSTOM_LOG_DATE_TIME_FORMAT)).toBe(true);
+                });
+                expect(allOutStrings).toHaveLength(4);
+            });
+        });
+    });
 });
 
 describe('When not writing to file, wrinkle:', () => {
@@ -1524,5 +1579,94 @@ describe('When not writing to file, wrinkle:', () => {
         });
     });
 
+    describe('logDateTimeFormat d+yy+LL+HH+mm+ss+SS', () => {
+        describe('On logging a debug, info, warn, error message:', () => {
+            let allOutStrings, allErrStrings, allFileStrings;
+            const toLog =
+                ['debug:Test debug.',
+                    'info:Test info.',
+                    'warn:Test warn.',
+                    'error:Test error.'];
+
+            beforeAll(async () => {
+                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-log', toLog, '-logDateTimeFormat', CUSTOM_LOG_DATE_TIME_FORMAT]);
+            });
+
+            afterAll(() => {
+                fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
+            });
+
+            test('Creates no logs dir.', () => {
+                expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
+            });
+
+            test('No errors occur in stderr', () => {
+                expect(allErrStrings).toHaveLength(0);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+                allFileStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log, CUSTOM_LOG_DATE_TIME_FORMAT)).toBe(true);
+                })
+                expect(allOutStrings).toHaveLength(4);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+                allOutStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log, CUSTOM_LOG_DATE_TIME_FORMAT)).toBe(true);
+                });
+                expect(allOutStrings).toHaveLength(4);
+            });
+        });
+    })
+
+    describe('extension', () => {
+        describe('.txt', () => {
+            let allOutStrings, allErrStrings, allFileStrings;
+            const toLog =
+                ['debug:Test debug.',
+                    'info:Test info.',
+                    'warn:Test warn.',
+                    'error:Test error.'];
+
+            beforeAll(async () => {
+                [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-log', toLog, '-extension', '.txt']);
+            });
+
+            afterAll(() => {
+                fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
+            });
+
+            test('Creates no logs dir.', () => {
+                expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
+            });
+
+            test('No errors occur in stderr', () => {
+                expect(allErrStrings).toHaveLength(0);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+                allFileStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log)).toBe(true);
+                })
+                expect(allOutStrings).toHaveLength(4);
+            });
+
+            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+                allOutStrings.forEach((log, i) => {
+                    // split the debug:Test debug. array to debug: Test debug
+                    expect(log).toContain(toLog[i].split(':').join(': '));
+                    expect(isValidParseFormat(log)).toBe(true);
+                });
+                expect(allOutStrings).toHaveLength(4);
+            });
+        });
+    });
 });
 
