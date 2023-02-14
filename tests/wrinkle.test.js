@@ -1199,9 +1199,11 @@ describe('toFile: true', () => {
                     'info:Test info.',
                     'warn:Test warn.',
                     'error:Test error.'];
+
             beforeAll(async () => {
                 [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog, '-logDir', logDir, '-unsafeMode', true]);
             });
+
             afterAll(() => {
                 fs.rmSync(logDir, { recursive: true, force: true });
             });
@@ -1251,9 +1253,11 @@ describe('toFile: true', () => {
                     'info:Test info.',
                     'warn:Test warn.',
                     'error:Test error.'];
+
             beforeAll(async () => {
                 [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog, '-logDir', logDir, '-unsafeMode', true]);
             });
+
             afterAll(() => {
                 fs.rmSync(logDir, { recursive: true, force: true });
             });
@@ -1293,6 +1297,60 @@ describe('toFile: true', () => {
                 });
                 expect(allOutStrings).toHaveLength(4);
             });
+        });
+    });
+
+    describe('true and logDir \'/logs\' and attempting to log a debug, info, warn, error message:', () => {
+        const logDir = '/logs';
+        let allOutStrings, allErrStrings, allFileStrings;
+        const toLog =
+            ['debug:Test debug.',
+                'info:Test info.',
+                'warn:Test warn.',
+                'error:Test error.'];
+
+        beforeAll(async () => {
+            [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog, '-logDir', logDir, '-unsafeMode', true]);
+        });
+
+        afterAll(() => {
+            fs.rmSync(logDir, { recursive: true, force: true });
+        });
+
+        test('Creates the \'/logs\' dir.', () => {
+            expect(fs.existsSync(logDir)).toBe(true);
+        });
+
+        test('Creates 1 log file.', () => {
+            expect(fs.readdirSync(logDir)).toHaveLength(1)
+        });
+
+        test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
+            const [foundFirstFileName] = fs.readdirSync(logDir);
+            expect(foundFirstFileName).toBe(testFileName);
+        });
+
+        test('No errors occur in stderr', () => {
+            expect(allErrStrings).toHaveLength(0);
+        });
+
+        test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            allFileStrings.forEach((log, i) => {
+                // split the debug:Test debug. array to debug: Test debug
+                expect(log).toContain(toLog[i].split(':').join(': '));
+                expect(isValidParseFormat(log)).toBe(true);
+            })
+            expect(allOutStrings).toHaveLength(4);
+        });
+
+        test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            allOutStrings.forEach((log, i) => {
+                // split the debug:Test debug. array to debug: Test debug
+                expect(log).toContain(toLog[i].split(':').join(': '));
+                expect(isValidParseFormat(log)).toBe(true);
+            });
+            expect(allOutStrings).toHaveLength(4);
         });
     });
 

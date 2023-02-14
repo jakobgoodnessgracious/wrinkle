@@ -1,4 +1,4 @@
-const Wrinkle = require('wrinkle');
+const Wrinkle = require('../index.js');
 const flags = {};
 for (let j = 0; j < process.argv.length; j++) {
     const argument = process.argv[j];

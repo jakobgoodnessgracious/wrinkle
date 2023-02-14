@@ -33,7 +33,7 @@ class Wrinkle {
         if (this._toFile) {
             this._setLastWroteFileName();
             // create the log directory up front. I'd rather fail creating this immediately, 
-            // than farther into application runtime
+            // than further into application runtime
             this._makeLogDir();
             this._cleanOutOfDateLogFiles();
         }
@@ -132,7 +132,6 @@ class Wrinkle {
     }
 
     _makeLogDir() {
-        process.stderr.write('here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         if (!this._unsafeMode && (this._logDir.startsWith('/') || this._logDir.includes('..'))) {
             this._writeError(`logDir: \'${this._logDir}\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
             process.exitCode = 1;
