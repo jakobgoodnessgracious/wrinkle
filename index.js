@@ -7,80 +7,95 @@ const { format, parse, differenceInSeconds,
 // TODO CLEAN
 // TODO SafelySet object props
 class Wrinkle {
+    #toFile;
+    #logDir;
+    #fileDateTimeFormat;
+    #logDateTimeFormat;
+    #level;
+    #maxLogFileSizeBytes;
+    #unsafeMode;
+    #extension;
+    #maxLogFileAge;
+    #allowedLogFuncLevels;
+    #lastLogFileName;
+    #sizeVersion;
+    #rolloverSize;
+    #logFileStream;
+    #lastWroteFileName;
     constructor(opts) {
         const { toFile, extension, logDir, maxLogFileAge, logLevel, fileDateTimeFormat,
             logDateTimeFormat, maxLogFileSizeBytes, unsafeMode } = opts || {};
-        this._toFile = !!toFile;
-        this._logDir = this._setLogDir(logDir);
-        this._fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
-        this._logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy HH:mm:ss.SS';
-        this._level = logLevel || (process.env.NODE_ENV === 'production' ? 'error' : 'debug'); // test will be debug as well
-        this._maxLogFileSizeBytes = maxLogFileSizeBytes || null;
-        this._unsafeMode = !!unsafeMode;
-        this._extension = extension || '.log';
-        this._maxLogFileAge = maxLogFileAge && typeof maxLogFileAge === 'string' ? maxLogFileAge.trim().toLowerCase() : null;
+        this.#toFile = !!toFile;
+        this.#logDir = this.#setLogDir(logDir);
+        this.#fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
+        this.#logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy HH:mm:ss.SS';
+        this.#level = logLevel || (process.env.NODE_ENV === 'production' ? 'error' : 'debug'); // test will be debug as well
+        this.#maxLogFileSizeBytes = maxLogFileSizeBytes || null;
+        this.#unsafeMode = !!unsafeMode;
+        this.#extension = extension || '.log';
+        this.#maxLogFileAge = maxLogFileAge && typeof maxLogFileAge === 'string' ? maxLogFileAge.trim().toLowerCase() : null;
         // set allowed log func levels
-        this._allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
-            if (array.indexOf(this._level) <= index) {
+        this.#allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce((accumulator, currentValue, index, array) => {
+            if (array.indexOf(this.#level) <= index) {
                 accumulator.push(currentValue);
             }
             return accumulator;
         }, []);
-        this._lastLogFileName = '';
-        this._sizeVersion = 1;
-        this._rolloverSize = 0;
+        this.#lastLogFileName = '';
+        this.#sizeVersion = 1;
+        this.#rolloverSize = 0;
 
-        this._logFileStream = null;
+        this.#logFileStream = null;
 
-        if (this._toFile) {
-            this._setLastWroteFileName();
+        if (this.#toFile) {
+            this.#setLastWroteFileName();
             // create the log directory up front. I'd rather fail creating this immediately, 
             // than further into application runtime
-            this._makeLogDir();
-            this._cleanOutOfDateLogFiles();
+            this.#makeLogDir();
+            this.#cleanOutOfDateLogFiles();
         }
     }
 
-    _setLogDir(logDir) {
+    #setLogDir(logDir) {
         if (logDir) {
             return logDir.endsWith('/') ? logDir : logDir + '/';
         }
         return './logs/';
     }
 
-    _setLastWroteFileName() {
+    #setLastWroteFileName() {
         // TODO simplify
         let topVersioned = '';
         try {
-            [topVersioned] = fs.readdirSync(this._logDir).sort().reverse();
+            [topVersioned] = fs.readdirSync(this.#logDir).sort().reverse();
         } catch (e) {
             // handle
         }
-        this._lastWroteFileName = topVersioned ? `${this._logDir}${topVersioned}` : '';
-        if (this._lastWroteFileName) {
-            this._rolloverSize = this._getFilesizeInBytes(this._lastWroteFileName);
+        this.#lastWroteFileName = topVersioned ? `${this.#logDir}${topVersioned}` : '';
+        if (this.#lastWroteFileName) {
+            this.#rolloverSize = this.#getFilesizeInBytes(this.#lastWroteFileName);
         }
     }
 
-    _formatLog(logLevel) {
-        return `${format(Date.now(), this._logDateTimeFormat)} ${logLevel}:`;
+    #formatLog(logLevel) {
+        return `${format(Date.now(), this.#logDateTimeFormat)} ${logLevel}:`;
     }
 
-    _getCurrentLogPath = () => {
-        return `${this._logDir}${format(Date.now(), this._fileDateTimeFormat)}`;
+    #getCurrentLogPath = () => {
+        return `${this.#logDir}${format(Date.now(), this.#fileDateTimeFormat)}`;
     }
 
-    _guardLevel(logFuncLevel) {
-        return this._allowedLogFuncLevels.includes(logFuncLevel);
+    #guardLevel(logFuncLevel) {
+        return this.#allowedLogFuncLevels.includes(logFuncLevel);
     }
 
-    _isValidDate(d) {
+    #isValidDate(d) {
         return d instanceof Date && !isNaN(d);
     }
 
-    _cleanOutOfDateLogFiles() {
-        if (!this._maxLogFileAge || !this._toFile) return;
-        const [numberOf, timeType] = this._maxLogFileAge.split(':');
+    #cleanOutOfDateLogFiles() {
+        if (!this.#maxLogFileAge || !this.#toFile) return;
+        const [numberOf, timeType] = this.#maxLogFileAge.split(':');
         let differenceFunc;
         if (timeType.includes('month')) {
             differenceFunc = differenceInMonths;
@@ -98,147 +113,147 @@ class Wrinkle {
             // handle
             return;
         }
-        const currentLogFileName = this._getCurrentLogPath().split(this._logDir)[1];
-        const recentOrderedLogFiles = fs.readdirSync(this._logDir).sort().reverse();
-        const currentLogfileDate = parse(currentLogFileName, this._fileDateTimeFormat, new Date());
+        const currentLogFileName = this.#getCurrentLogPath().split(this.#logDir)[1];
+        const recentOrderedLogFiles = fs.readdirSync(this.#logDir).sort().reverse();
+        const currentLogfileDate = parse(currentLogFileName, this.#fileDateTimeFormat, new Date());
         for (const fileName of recentOrderedLogFiles) {
-            const fileNameDate = this._parseFileNameDate(fileName);
+            const fileNameDate = this.#parseFileNameDate(fileName);
 
             const difference = differenceFunc(currentLogfileDate, fileNameDate);
             if (difference >= numberOf) {
                 try {
-                    fs.rmSync(this._logDir + fileName);
+                    fs.rmSync(this.#logDir + fileName);
                 } catch (e) {
                     // error
-                    this._writeError(`Could not remove out of date log file: ${fileName}`);
+                    this.#writeError(`Could not remove out of date log file: ${fileName}`);
                 }
             }
         }
     }
 
-    _parseFileNameDate(fileName) {
-        let subStringedFileName = fileName.substring(0, fileName.length - this._extension.length - (this._maxLogFileSizeBytes ? ('.' + this._sizeVersion).length : 0));
-        let fileNameDate = parse(subStringedFileName, this._fileDateTimeFormat, new Date());
+    #parseFileNameDate(fileName) {
+        let subStringedFileName = fileName.substring(0, fileName.length - this.#extension.length - (this.#maxLogFileSizeBytes ? ('.' + this.#sizeVersion).length : 0));
+        let fileNameDate = parse(subStringedFileName, this.#fileDateTimeFormat, new Date());
 
-        if (!this._isValidDate(fileNameDate)) {
-            subStringedFileName = fileName.substring(0, fileName.length - this._extension.length);
-            fileNameDate = parse(subStringedFileName, this._fileDateTimeFormat, new Date());
+        if (!this.#isValidDate(fileNameDate)) {
+            subStringedFileName = fileName.substring(0, fileName.length - this.#extension.length);
+            fileNameDate = parse(subStringedFileName, this.#fileDateTimeFormat, new Date());
         }
 
         return fileNameDate;
     }
 
-    _writeError(text) {
+    #writeError(text) {
         // TODO write the error (text, error)...
-        process.stderr.write(`${format(Date.now(), this._logDateTimeFormat)} [wrinkle]: ${text}\n`);
+        process.stderr.write(`${format(Date.now(), this.#logDateTimeFormat)} [wrinkle]: ${text}\n`);
     }
 
-    _makeLogDir() {
-        if (!this._unsafeMode && (this._logDir.startsWith('/') || this._logDir.includes('..'))) {
-            this._writeError(`logDir: \'${this._logDir}\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
+    #makeLogDir() {
+        if (!this.#unsafeMode && (this.#logDir.startsWith('/') || this.#logDir.includes('..'))) {
+            this.#writeError(`logDir: \'${this.#logDir}\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
             process.exitCode = 1;
             return;
         }
 
-        if (!fs.existsSync(this._logDir)) {
+        if (!fs.existsSync(this.#logDir)) {
             try {
-                fs.mkdirSync(this._logDir);
+                fs.mkdirSync(this.#logDir);
             } catch (err) {
-                this._writeError(`Encountered an error while attempting to create directory: '${this._logDir}'`);
+                this.#writeError(`Encountered an error while attempting to create directory: '${this.#logDir}'`);
                 process.exitCode = 1;
             }
         }
     }
 
-    _getFilesizeInBytes(filename) {
+    #getFilesizeInBytes(filename) {
         if (!fs.existsSync(filename)) return 0;
         const stats = fs.statSync(filename);
         const fileSizeInBytes = stats.size;
         return fileSizeInBytes;
     }
 
-    _writeToFile(text) {
-        let currentLogFileName = this._getCurrentLogPath();
+    #writeToFile(text) {
+        let currentLogFileName = this.#getCurrentLogPath();
 
-        if (this._maxLogFileSizeBytes) {
+        if (this.#maxLogFileSizeBytes) {
             // current date + .log
-            if (!fs.existsSync(currentLogFileName + '.0' + this._extension)) {
+            if (!fs.existsSync(currentLogFileName + '.0' + this.#extension)) {
                 currentLogFileName += '.0';
-                this._sizeVersion = 1;
-                this._rolloverSize = 0;
+                this.#sizeVersion = 1;
+                this.#rolloverSize = 0;
             } else {
                 // TODO simplify how the logic for setting this works the || 
                 const textSizeBytes = Buffer.byteLength(text, 'utf8');
-                this._rolloverSize += textSizeBytes;
-                if ((this._rolloverSize && (this._rolloverSize + textSizeBytes > this._maxLogFileSizeBytes))) {
-                    this._rolloverSize = 0;
-                    currentLogFileName = currentLogFileName + '.' + this._sizeVersion;
-                    this._sizeVersion += 1;
+                this.#rolloverSize += textSizeBytes;
+                if ((this.#rolloverSize && (this.#rolloverSize + textSizeBytes > this.#maxLogFileSizeBytes))) {
+                    this.#rolloverSize = 0;
+                    currentLogFileName = currentLogFileName + '.' + this.#sizeVersion;
+                    this.#sizeVersion += 1;
                 } else {
                     // TODO double check the || statement makes sense
-                    [currentLogFileName] = (this._lastLogFileName || this._lastWroteFileName).split(this._extension);
+                    [currentLogFileName] = (this.#lastLogFileName || this.#lastWroteFileName).split(this.#extension);
                 }
             }
         }
-        currentLogFileName += this._extension;
+        currentLogFileName += this.#extension;
         // new file being made
-        if (this._lastLogFileName !== currentLogFileName) {
-            if (this._logFileStream) {
-                this._logFileStream.end();
+        if (this.#lastLogFileName !== currentLogFileName) {
+            if (this.#logFileStream) {
+                this.#logFileStream.end();
             }
             if (!fs.existsSync(currentLogFileName)) fs.writeFileSync(currentLogFileName, '');
-            this._logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
-            this._lastLogFileName = currentLogFileName;
-            this._cleanOutOfDateLogFiles();
+            this.#logFileStream = fs.createWriteStream(currentLogFileName, { flags: 'a' });
+            this.#lastLogFileName = currentLogFileName;
+            this.#cleanOutOfDateLogFiles();
         }
 
-        this._logFileStream.write(text, () => {
+        this.#logFileStream.write(text, () => {
             // in case out of sync
-            this._lastWroteFileName = this._logFileStream.path;
+            this.#lastWroteFileName = this.#logFileStream.path;
         });
 
     }
 
-    _handleLog(level, ...textAsParams) {
+    #handleLog(level, ...textAsParams) {
         if (process.exitCode) return;
-        if (!this._guardLevel(level)) return;
+        if (!this.#guardLevel(level)) return;
 
-        const toWrite = `${this._formatLog(level)} ${textAsParams.join(' ')}\n`;
+        const toWrite = `${this.#formatLog(level)} ${textAsParams.join(' ')}\n`;
 
         // dont use stderr for error level, since the stderr stream write time may be out of sync with stdout
         process.stdout.write(toWrite);
 
-        if (this._toFile) {
-            this._writeToFile(toWrite);
+        if (this.#toFile) {
+            this.#writeToFile(toWrite);
         }
     }
 
     create() {
-        this._logFileStream = fs.createWriteStream(this._lastLogFileName || this._lastWroteFileName || this._getCurrentLogPath() + this._extension, { flags: 'a' });
+        this.#logFileStream = fs.createWriteStream(this.#lastLogFileName || this.#lastWroteFileName || this.#getCurrentLogPath() + this.#extension, { flags: 'a' });
     }
 
     destroy() {
-        if (this._logFileStream) this._logFileStream.destroy();
+        if (this.#logFileStream) this.#logFileStream.destroy();
     }
 
     end() {
-        this._logFileStream.end();
+        this.#logFileStream.end();
     }
 
     debug(...textAsParams) {
-        this._handleLog('debug', ...textAsParams);
+        this.#handleLog('debug', ...textAsParams);
     }
 
     info(...textAsParams) {
-        this._handleLog('info', ...textAsParams);
+        this.#handleLog('info', ...textAsParams);
     }
 
     warn(...textAsParams) {
-        this._handleLog('warn', ...textAsParams);
+        this.#handleLog('warn', ...textAsParams);
     }
 
     error(...textAsParams) {
-        this._handleLog('error', ...textAsParams);
+        this.#handleLog('error', ...textAsParams);
     }
 }
 

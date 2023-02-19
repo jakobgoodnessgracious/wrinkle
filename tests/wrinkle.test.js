@@ -12,7 +12,7 @@ const TEST_LOG_DIR = './logs';
 const POLL_MS = 25;
 
 // examples for other testing, remove after used
-// test('Logs the first line: \'[wrinkle] Created directory: \'./logs\' for logging.\'', () => {
+// it('Logs the first line: \'[wrinkle] Created directory: \'./logs\' for logging.\'', () => {
 //     const searchString = '[wrinkle] Created directory: \'./logs\' for logging.';
 //     let hasline = fs.readFileSync(TEST_LOG_DIR + '/' + format(Date.now(), FILE_DATE_FORMAT) + '.log', { encoding: 'utf8', flag: 'r' }).includes(searchString);
 //     expect(hasline).toBe(true);
@@ -220,19 +220,19 @@ describe('toFile: true', () => {
             });
 
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates no log files.', () => {
+            it('Creates no log files.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(0)
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('No logs occur in stdout', () => {
+            it('No logs occur in stdout', () => {
                 expect(allOutStrings).toHaveLength(0);
             });
         });
@@ -252,25 +252,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -279,7 +279,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -304,15 +304,15 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates no log files.', () => {
+            it('Creates no log files.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(0)
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('No logs occur in stdout', () => {
+            it('No logs occur in stdout', () => {
                 expect(allOutStrings).toHaveLength(0);
             });
         });
@@ -330,25 +330,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -357,7 +357,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -382,12 +382,12 @@ describe('toFile: true', () => {
                 await runTestWrinkleRunner(['-toFile']);
             });
 
-            test('Logs nothing to the file.', () => {
+            it('Logs nothing to the file.', () => {
                 let fileLines = fs.readFileSync(TEST_LOG_DIR + '/' + format(Date.now(), FILE_DATE_FORMAT) + '.log', { encoding: 'utf8', flag: 'r' });
                 expect(fileLines).toBe('');
             });
 
-            test('Does not create a new log file.', () => {
+            it('Does not create a new log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
         });
@@ -403,25 +403,25 @@ describe('toFile: true', () => {
                 [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-toFile', '-log', toLog]);
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Does not create a new log file.', () => {
+            it('Does not create a new log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -430,7 +430,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -463,16 +463,16 @@ describe('toFile: true', () => {
             fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
         });
 
-        test('Does not create a new log file.', () => {
+        it('Does not create a new log file.', () => {
             expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(2);
         });
 
-        test('Logs 0 lines to file 1:', () => {
+        it('Logs 0 lines to file 1:', () => {
             const [firstFileValues] = allFileStrings.values();
             expect(firstFileValues).toHaveLength(0);
         });
 
-        test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file 2:', () => {
+        it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file 2:', () => {
             const [, secondFileValues] = allFileStrings.values()
             secondFileValues.forEach((log, i) => {
                 // split the debug:Test debug. array to debug: Test debug
@@ -494,19 +494,19 @@ describe('toFile: true', () => {
             });
 
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates no log files.', () => {
+            it('Creates no log files.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(0)
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('No logs occur in stdout', () => {
+            it('No logs occur in stdout', () => {
                 expect(allOutStrings).toHaveLength(0);
             });
         });
@@ -527,25 +527,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\'.0.log format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\'.0.log format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.0.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -554,7 +554,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -581,15 +581,15 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 2 log files.', () => {
+            it('Creates 2 log files.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(2)
             });
 
-            test('Names the log two files with the \'LL-dd-yyyy\'.<version>.log format.', () => {
+            it('Names the log two files with the \'LL-dd-yyyy\'.<version>.log format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.0.log';
                 const testFileName2 = format(Date.now(), FILE_DATE_FORMAT) + '.1.log';
                 const [foundFirstFileName, foundSecondFileName] = fs.readdirSync(TEST_LOG_DIR);
@@ -597,11 +597,11 @@ describe('toFile: true', () => {
                 expect(foundSecondFileName).toBe(testFileName2);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 8 lines: \'<level>: Test <level>.\' in order to file 1:', () => {
+            it('Logs 8 lines: \'<level>: Test <level>.\' in order to file 1:', () => {
                 const [firstFileValues] = allFileStrings.values()
                 firstFileValues.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
@@ -610,7 +610,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(16);
             });
 
-            test('Logs 8 lines: \'<level>: Test <level>.\' in order to file 2:', () => {
+            it('Logs 8 lines: \'<level>: Test <level>.\' in order to file 2:', () => {
                 const [, secondFileValues] = allFileStrings.values()
                 let base = 4;
                 // start halfway through the initial array using base + i
@@ -621,7 +621,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(16);
             });
 
-            test('Logs 16 lines to stdout:', () => {
+            it('Logs 16 lines to stdout:', () => {
                 expect(allOutStrings).toHaveLength(16);
             });
         });
@@ -648,16 +648,16 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Does not create a new log file.', () => {
+            it('Does not create a new log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(2);
             });
 
-            test('Logs 0 lines to file 1:', () => {
+            it('Logs 0 lines to file 1:', () => {
                 const [firstFileValues] = allFileStrings.values();
                 expect(firstFileValues).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file 2:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file 2:', () => {
                 const [, secondFileValues] = allFileStrings.values()
                 secondFileValues.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
@@ -694,11 +694,11 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Cleans old log file.', () => {
+            it('Cleans old log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file 1:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file 1:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -727,25 +727,25 @@ describe('toFile: true', () => {
                 fs.rmSync(customLogDirName, { recursive: true, force: true });
             });
 
-            test('Creates the \'./LOG_test\' dir.', () => {
+            it('Creates the \'./LOG_test\' dir.', () => {
                 expect(fs.existsSync(customLogDirName)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(customLogDirName)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(customLogDirName);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -754,7 +754,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -782,25 +782,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy-HH-mm-ss\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy-HH-mm-ss\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT_SECONDS) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -809,7 +809,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -837,25 +837,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy-HH\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy-HH\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -864,7 +864,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -890,25 +890,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 3 lines: \'<level>: Test <level>.\' in order to file:', () => {
+            it('Logs 3 lines: \'<level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 1;
@@ -917,7 +917,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(3);
             });
 
-            test('Logs 3 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 3 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 1;
@@ -943,25 +943,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 2 lines: \'<level>: Test <level>.\' in order to file:', () => {
+            it('Logs 2 lines: \'<level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 2;
@@ -970,7 +970,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(2);
             });
 
-            test('Logs 2 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 2 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 2;
@@ -996,25 +996,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 1 line: \'<level>: Test <level>.\' in order to file:', () => {
+            it('Logs 1 line: \'<level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 3;
@@ -1023,7 +1023,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(1);
             });
 
-            test('Logs 1 line: \'<level>: Test <level>.\' to stdout:', () => {
+            it('Logs 1 line: \'<level>: Test <level>.\' to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 3;
@@ -1051,25 +1051,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy-HH\' format and .txt extension', () => {
+            it('Names the log file with the \'LL-dd-yyyy-HH\' format and .txt extension', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.txt';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1078,7 +1078,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1107,19 +1107,19 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates no \'../logs\' dir.', () => {
+            it('Creates no \'../logs\' dir.', () => {
                 expect(fs.existsSync(logDir)).toBe(false);
             });
 
-            test('One error occurs in stderr.', () => {
+            it('One error occurs in stderr.', () => {
                 expect(allErrStrings).toHaveLength(1);
             });
 
-            test('Logs \'[wrinkle]: logDir: \'../logs\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...\'  stderr', () => {
+            it('Logs \'[wrinkle]: logDir: \'../logs\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...\'  stderr', () => {
                 expect(allErrStrings[0]).toContain('[wrinkle]: logDir: \'../logs/\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...');
             });
 
-            test('Logs 0 lines: \'<level>: Test <level>.\' to stdout:', () => {
+            it('Logs 0 lines: \'<level>: Test <level>.\' to stdout:', () => {
                 expect(allOutStrings).toHaveLength(0);
             });
         });
@@ -1141,19 +1141,19 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates no \'../../logs\' dir.', () => {
+            it('Creates no \'../../logs\' dir.', () => {
                 expect(fs.existsSync(logDir)).toBe(false);
             });
 
-            test('One error occurs in stderr.', () => {
+            it('One error occurs in stderr.', () => {
                 expect(allErrStrings).toHaveLength(1);
             });
 
-            test('Logs \'[wrinkle]: logDir: \'../../logs\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...\'  stderr', () => {
+            it('Logs \'[wrinkle]: logDir: \'../../logs\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...\'  stderr', () => {
                 expect(allErrStrings[0]).toContain(`[wrinkle]: logDir: \'${logDir}\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
             });
 
-            test('Logs 0 lines: \'<level>: Test <level>.\' to stdout:', () => {
+            it('Logs 0 lines: \'<level>: Test <level>.\' to stdout:', () => {
                 expect(allOutStrings).toHaveLength(0);
             });
         });
@@ -1175,19 +1175,19 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates no \'/logs\' dir.', () => {
+            it('Creates no \'/logs\' dir.', () => {
                 expect(fs.existsSync(logDir)).toBe(false);
             });
 
-            test('One error occurs in stderr.', () => {
+            it('One error occurs in stderr.', () => {
                 expect(allErrStrings).toHaveLength(1);
             });
 
-            test('Logs \'[wrinkle]: logDir: \'/logs/\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...\'  stderr', () => {
+            it('Logs \'[wrinkle]: logDir: \'/logs/\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...\'  stderr', () => {
                 expect(allErrStrings[0]).toContain(`[wrinkle]: logDir: \'${logDir}/\' is not a safe path. Set option \'unsafeMode: true\' to ignore this check. Exiting...`);
             });
 
-            test('Logs 0 lines: \'<level>: Test <level>.\' to stdout:', () => {
+            it('Logs 0 lines: \'<level>: Test <level>.\' to stdout:', () => {
                 expect(allOutStrings).toHaveLength(0);
             });
         });
@@ -1209,25 +1209,25 @@ describe('toFile: true', () => {
                 fs.rmSync(logDir, { recursive: true, force: true });
             });
 
-            test('Creates the \'../logs\' dir.', () => {
+            it('Creates the \'../logs\' dir.', () => {
                 expect(fs.existsSync(logDir)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(logDir)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(logDir);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1236,7 +1236,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1263,25 +1263,25 @@ describe('toFile: true', () => {
                 fs.rmSync(logDir, { recursive: true, force: true });
             });
 
-            test('Creates the \'../../logs\' dir.', () => {
+            it('Creates the \'../../logs\' dir.', () => {
                 expect(fs.existsSync(logDir)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(logDir)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(logDir);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1290,7 +1290,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1318,25 +1318,25 @@ describe('toFile: true', () => {
                 fs.rmSync(logDir, { recursive: true, force: true });
             });
 
-            test('Creates the \'/logs\' dir.', () => {
+            it('Creates the \'/logs\' dir.', () => {
                 expect(fs.existsSync(logDir)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(logDir)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\' format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\' format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(logDir);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1345,7 +1345,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1373,25 +1373,25 @@ describe('toFile: true', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates the \'./logs\' dir.', () => {
+            it('Creates the \'./logs\' dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(true);
             });
 
-            test('Creates 1 log file.', () => {
+            it('Creates 1 log file.', () => {
                 expect(fs.readdirSync(TEST_LOG_DIR)).toHaveLength(1)
             });
 
-            test('Names the log file with the \'LL-dd-yyyy\'.log format.', () => {
+            it('Names the log file with the \'LL-dd-yyyy\'.log format.', () => {
                 const testFileName = format(Date.now(), FILE_DATE_FORMAT) + '.log';
                 const [foundFirstFileName] = fs.readdirSync(TEST_LOG_DIR);
                 expect(foundFirstFileName).toBe(testFileName);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1400,7 +1400,7 @@ describe('toFile: true', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1419,15 +1419,15 @@ describe('When not writing to file, wrinkle:', () => {
             [allOutStrings, allErrStrings] = await runTestWrinkleRunner();
         });
 
-        test('No errors occur in stderr', () => {
+        it('No errors occur in stderr', () => {
             expect(allErrStrings).toHaveLength(0);
         });
 
-        test('Creates no \'./logs\' dir.', () => {
+        it('Creates no \'./logs\' dir.', () => {
             expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
         });
 
-        test('Logs nothing.', () => {
+        it('Logs nothing.', () => {
             expect(allOutStrings).toHaveLength(0);
         });
     });
@@ -1444,11 +1444,11 @@ describe('When not writing to file, wrinkle:', () => {
             [allOutStrings, allErrStrings] = await runTestWrinkleRunner(['-log', toLog]);
         });
 
-        test('No errors occur in stderr', () => {
+        it('No errors occur in stderr', () => {
             expect(allErrStrings).toHaveLength(0);
         });
 
-        test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+        it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
             allOutStrings.forEach((log, i) => {
                 // split the debug:Test debug. array to debug: Test debug
                 expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1470,15 +1470,15 @@ describe('When not writing to file, wrinkle:', () => {
                 [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-log', toLog, '-logLevel', 'debug']);
             });
 
-            test('Creates no logs dir.', () => {
+            it('Creates no logs dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1500,15 +1500,15 @@ describe('When not writing to file, wrinkle:', () => {
                 [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-log', toLog, '-logLevel', 'info']);
             });
 
-            test('Creates no logs dir.', () => {
+            it('Creates no logs dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 3 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 3 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 1;
@@ -1530,15 +1530,15 @@ describe('When not writing to file, wrinkle:', () => {
                 [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-log', toLog, '-logLevel', 'warn']);
             });
 
-            test('Creates no logs dir.', () => {
+            it('Creates no logs dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 2 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 2 lines: \'<level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 2;
@@ -1560,15 +1560,15 @@ describe('When not writing to file, wrinkle:', () => {
                 [allOutStrings, allErrStrings, allFileStrings] = await runTestWrinkleRunner(['-log', toLog, '-logLevel', 'error']);
             });
 
-            test('Creates no logs dir.', () => {
+            it('Creates no logs dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 1 line: \'<level>: Test <level>.\' to stdout:', () => {
+            it('Logs 1 line: \'<level>: Test <level>.\' to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     const base = 3;
@@ -1596,15 +1596,15 @@ describe('When not writing to file, wrinkle:', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates no logs dir.', () => {
+            it('Creates no logs dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1613,7 +1613,7 @@ describe('When not writing to file, wrinkle:', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1641,15 +1641,15 @@ describe('When not writing to file, wrinkle:', () => {
                 fs.rmSync(TEST_LOG_DIR, { recursive: true, force: true });
             });
 
-            test('Creates no logs dir.', () => {
+            it('Creates no logs dir.', () => {
                 expect(fs.existsSync(TEST_LOG_DIR)).toBe(false);
             });
 
-            test('No errors occur in stderr', () => {
+            it('No errors occur in stderr', () => {
                 expect(allErrStrings).toHaveLength(0);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to file:', () => {
                 allFileStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
@@ -1658,7 +1658,7 @@ describe('When not writing to file, wrinkle:', () => {
                 expect(allOutStrings).toHaveLength(4);
             });
 
-            test('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
+            it('Logs 4 lines: \'<properDateTimeFormat> <level>: Test <level>.\' in order to stdout:', () => {
                 allOutStrings.forEach((log, i) => {
                     // split the debug:Test debug. array to debug: Test debug
                     expect(log).toContain(toLog[i].split(':').join(': '));
