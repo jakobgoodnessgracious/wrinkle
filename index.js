@@ -95,7 +95,8 @@ class Wrinkle {
 
     #cleanOutOfDateLogFiles() {
         if (!this.#maxLogFileAge || !this.#toFile) return;
-        const [numberOf, timeType] = this.#maxLogFileAge.split(':');
+        const [numberOfString, timeType] = this.#maxLogFileAge.split(':');
+        const numberOf = parseInt(numberOfString, 10);
         let differenceFunc;
         if (timeType.includes('month')) {
             differenceFunc = differenceInMonths;
@@ -135,9 +136,10 @@ class Wrinkle {
         let subStringedFileName = fileName.substring(0, fileName.length - this.#extension.length - (this.#maxLogFileSizeBytes ? ('.' + this.#sizeVersion).length : 0));
         let fileNameDate = parse(subStringedFileName, this.#fileDateTimeFormat, new Date());
 
+        // try default format, otherwise we don't know the previous format used, so be safe and don't remove
         if (!this.#isValidDate(fileNameDate)) {
             subStringedFileName = fileName.substring(0, fileName.length - this.#extension.length);
-            fileNameDate = parse(subStringedFileName, this.#fileDateTimeFormat, new Date());
+            fileNameDate = parse(subStringedFileName, 'LL-dd-yyyy', new Date());
         }
 
         return fileNameDate;
