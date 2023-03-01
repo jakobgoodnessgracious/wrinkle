@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    // "incremental": true,
+    "esModuleInterop": true,
+    "module": "CommonJS",
+    "target": "ESNext",
+    "declaration": true,
+    "inlineSourceMap": false,
+    "listFiles": false,
+    "listEmittedFiles": false,
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "traceResolution": false,
+    "rootDir": ".",
+    "outDir": "./dist",
+    "sourceMap": true,
+    "typeRoots": ["./dist/index.d.ts"],
+    "types": ["node", "@types/jest"]
+  },
+  "include": ["index.ts", "./dist/index.d.ts"],
+  "exclude": ["node_modules", "dist"],
+  "extends": "./node_modules/@tsconfig/recommended/tsconfig.json"
+}

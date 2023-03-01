@@ -1,4 +1,4 @@
-const Wrinkle = require('../index.js');
+const Wrinkle = require('../dist/index.js');
 const flags = {};
 for (let j = 0; j < process.argv.length; j++) {
     const argument = process.argv[j];
@@ -16,7 +16,7 @@ for (let j = 0; j < process.argv.length; j++) {
     }
 }
 
-let logger = new Wrinkle(flags);
+const logger = new Wrinkle(flags);
 
 const logAtLevel = (level, text) => {
     switch (level) {
@@ -35,7 +35,7 @@ const logAtLevel = (level, text) => {
         default:
             logger.debug(level); // no loglevel set - TODO consider handling better
     }
-}
+};
 
 if (flags['log']) {
     const logValues = flags['log'];
@@ -46,8 +46,8 @@ if (flags['log']) {
         logs.push(logValues);
     }
 
-    logs.forEach(log => {
+    logs.forEach((log) => {
         const [level, text] = log.split(':');
         logAtLevel(level, text);
-    })
+    });
 }
