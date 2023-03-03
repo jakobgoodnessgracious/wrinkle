@@ -20,18 +20,29 @@ import {
 } from 'date-fns';
 import { WrinkleOptions } from './types';
 
-type SafeOptionConfig = {[key:string]: {type: string, oneOf?: any[], toLowerCase?: boolean, defaultValue?: any, endsWith?:string}};
+type SafeDefaultValue = boolean | string | number;
+
+type SafeOptionConfig = {
+  [key: string]: {
+    type: string;
+    oneOf?: string[];
+    toLowerCase?: boolean;
+    defaultValue?: SafeDefaultValue;
+    endsWith?: string;
+  };
+};
 const safeOptionsConfig: SafeOptionConfig = {
-  toFile: {type: 'boolean', defaultValue: false},
-  extension: {type: 'string', defaultValue: '.log'},
-  logDir: {type: 'string', defaultValue: './logs/', endsWith: '/'},
-  maxLogFileAge: {type: 'string', toLowerCase: true},
-  logLevel: {type: 'string', oneOf:['debug', 'info', 'warn', 'error'] },
-  fileDateTimeFormat: {type: 'string', defaultValue: 'LL-dd-yyyy'},
-  logDateTimeFormat: {type: 'string', defaultValue: 'LL-dd-yyyy HH:mm:ss.SS'},
-  maxLogFileSizeBytes: {type: 'number', defaultValue: 0},
-  unsafeMode: {type: 'boolean', defaultValue: false},
-}
+  toFile: { type: 'boolean', defaultValue: false },
+  extension: { type: 'string', defaultValue: '.log' },
+  logDir: { type: 'string', defaultValue: './logs/', endsWith: '/' },
+  // TODO must end with :minute/s, :second/s, etc or error
+  maxLogFileAge: { type: 'string', toLowerCase: true },
+  logLevel: { type: 'string', oneOf: ['debug', 'info', 'warn', 'error'] },
+  fileDateTimeFormat: { type: 'string', defaultValue: 'LL-dd-yyyy' },
+  logDateTimeFormat: { type: 'string', defaultValue: 'LL-dd-yyyy HH:mm:ss.SS' },
+  maxLogFileSizeBytes: { type: 'number', defaultValue: 0 },
+  unsafeMode: { type: 'boolean', defaultValue: false },
+};
 
 // TODO CLEAN
 // TODO SafelySet object props
@@ -46,21 +57,26 @@ class Wrinkle {
   #extension: string;
   #maxLogFileAge: string;
   #allowedLogFuncLevels: string[];
-  #lastLogFileName: string = '';
-  #sizeVersion: number = 1;
-  #rolloverSize: number = 0;
+  #lastLogFileName = '';
+  #sizeVersion = 1;
+  #rolloverSize = 0;
   #logFileStream: WriteStream | null = null;
   #lastWroteFileName = '';
 
   constructor(opts?: WrinkleOptions) {
-
-
     this.#toFile = this.#safelySet('toFile', opts);
     this.#logDir = this.#safelySet('logDir', opts);
     this.#fileDateTimeFormat = this.#safelySet('fileDateTimeFormat', opts);
     this.#logDateTimeFormat = this.#safelySet('logDateTimeFormat', opts);
-    this.#level = this.#safelySet('logLevel', opts, process.env.NODE_ENV === 'production' ? 'error' : 'debug'), // test will be debug as well);
-    this.#maxLogFileSizeBytes = this.#safelySet('maxLogFileSizeBytes', opts);
+    (this.#level = this.#safelySet(
+      'logLevel',
+      opts,
+      process.env.NODE_ENV === 'production' ? 'error' : 'debug'
+    )), // test will be debug as well);
+      (this.#maxLogFileSizeBytes = this.#safelySet(
+        'maxLogFileSizeBytes',
+        opts
+      ));
     this.#unsafeMode = this.#safelySet('unsafeMode', opts);
     this.#extension = this.#safelySet('extension', opts);
     this.#maxLogFileAge = this.#safelySet('maxLogFileAge', opts);
@@ -88,43 +104,62 @@ class Wrinkle {
       this.#cleanOutOfDateLogFiles();
       this.#setLastWroteFileName();
     }
-
   }
 
-  #safelySet(key: string, opts?: WrinkleOptions, dynamicDefault?: any) {
-    const {type, oneOf = [], toLowerCase = false, defaultValue = dynamicDefault, endsWith} = safeOptionsConfig[key];
+  #safelySet(
+    key: string,
+    opts?: WrinkleOptions,
+    dynamicDefault?: SafeDefaultValue
+  ) {
+    const {
+      type,
+      oneOf = [],
+      toLowerCase = false,
+      defaultValue = dynamicDefault,
+      endsWith,
+    } = safeOptionsConfig[key];
     if (!opts) return defaultValue;
     const optsValue = opts[key];
     if (!optsValue) return defaultValue;
-    let cleanedValue: any;
-    if (type === 'string'){
+    let cleanedValue;
+    if (type === 'string') {
       if (typeof optsValue === type) {
         let malleableValue = optsValue.trim();
         if (toLowerCase) {
           malleableValue = malleableValue.toLowerCase();
         }
         if (endsWith) {
-          malleableValue = malleableValue.endsWith('/') ? malleableValue : `${malleableValue}/`;
+          malleableValue = malleableValue.endsWith('/')
+            ? malleableValue
+            : `${malleableValue}/`;
         }
-        if (oneOf.length){
-          if (!oneOf.includes(malleableValue)){
-            this.#writeAndExit(`Error: WrinkleOption: '${key}', Value: '${optsValue}' must be one of: '${oneOf.toString()}'. Exiting . . .`);
+        if (oneOf.length) {
+          if (!oneOf.includes(malleableValue)) {
+            this.#writeAndExit(
+              `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be one of: '${oneOf.toString()}'. Exiting . . .`
+            );
           }
         }
-        
+
         cleanedValue = malleableValue;
       } else {
-        this.#writeAndExit(`Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`);
+        this.#writeAndExit(
+          `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`
+        );
       }
     } else {
       if (typeof optsValue === type) {
         cleanedValue = optsValue;
       } else {
-        this.#writeAndExit(`Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`);
+        this.#writeAndExit(
+          `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`
+        );
       }
     }
 
-    return !cleanedValue && defaultValue !== undefined ? defaultValue : cleanedValue;
+    return !cleanedValue && defaultValue !== undefined
+      ? defaultValue
+      : cleanedValue;
   }
 
   #setLastWroteFileName() {
@@ -135,7 +170,9 @@ class Wrinkle {
         .map((v) => ({
           name: v,
           time: statSync(this.#logDir + v).mtime.getTime(),
-        })).sort().reverse() // get an order off names first (in case mtime exact same)
+        }))
+        .sort()
+        .reverse() // get an order off names first (in case mtime exact same)
         .sort((a, b) => b.time - a.time)
         .map((v) => v.name);
     } catch (e) {
@@ -254,9 +291,11 @@ class Wrinkle {
       !this.#unsafeMode &&
       (this.#logDir.startsWith('/') || this.#logDir.includes('..'))
     ) {
-      this.#writeAndExit( `logDir: '${
-        this.#logDir
-      }' is not a safe path. Set option 'unsafeMode: true' to ignore this check. Exiting...`)
+      this.#writeAndExit(
+        `logDir: '${
+          this.#logDir
+        }' is not a safe path. Set option 'unsafeMode: true' to ignore this check. Exiting...`
+      );
       return;
     }
 
@@ -264,9 +303,11 @@ class Wrinkle {
       try {
         mkdirSync(this.#logDir);
       } catch (err) {
-        this.#writeAndExit(`Encountered an error while attempting to create directory: '${
-          this.#logDir
-        }'. Exiting...`)
+        this.#writeAndExit(
+          `Encountered an error while attempting to create directory: '${
+            this.#logDir
+          }'. Exiting...`
+        );
       }
     }
   }
