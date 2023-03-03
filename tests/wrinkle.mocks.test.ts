@@ -872,7 +872,8 @@ describe("toFile: true, logDir: '../test' ", () => {
     expect(stderrWrite).toHaveBeenCalledWith(
       expect.stringContaining(
         "[wrinkle]: logDir: '../test/' is not a safe path. Set option 'unsafeMode: true' to ignore this check. Exiting..."
-      )
+      ),
+      expect.any(Function)
     );
   });
 
@@ -947,7 +948,8 @@ describe("toFile: true, logDir: '/test' ", () => {
     expect(stderrWrite).toHaveBeenCalledWith(
       expect.stringContaining(
         "[wrinkle]: logDir: '/test/' is not a safe path. Set option 'unsafeMode: true' to ignore this check. Exiting..."
-      )
+      ),
+      expect.any(Function)
     );
   });
 

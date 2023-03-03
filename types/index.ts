@@ -9,6 +9,7 @@ export interface Wrinkle {
 }
 
 export interface WrinkleOptions {
+  [key:string]: any;
   toFile?: boolean;
   extension?: string;
   logDir?: string;
@@ -16,6 +17,6 @@ export interface WrinkleOptions {
   logLevel?: string;
   fileDateTimeFormat?: string;
   logDateTimeFormat?: string;
-  maxLogFileSizeBytes?: number | string;
+  maxLogFileSizeBytes?: number;
   unsafeMode?: boolean;
 }

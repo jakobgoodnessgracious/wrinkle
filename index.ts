@@ -20,50 +20,51 @@ import {
 } from 'date-fns';
 import { WrinkleOptions } from './types';
 
+type SafeOptionConfig = {[key:string]: {type: string, oneOf?: any[], toLowerCase?: boolean, defaultValue?: any, endsWith?:string}};
+const safeOptionsConfig: SafeOptionConfig = {
+  toFile: {type: 'boolean', defaultValue: false},
+  extension: {type: 'string', defaultValue: '.log'},
+  logDir: {type: 'string', defaultValue: './logs/', endsWith: '/'},
+  maxLogFileAge: {type: 'string', toLowerCase: true},
+  logLevel: {type: 'string', oneOf:['debug', 'info', 'warn', 'error'] },
+  fileDateTimeFormat: {type: 'string', defaultValue: 'LL-dd-yyyy'},
+  logDateTimeFormat: {type: 'string', defaultValue: 'LL-dd-yyyy HH:mm:ss.SS'},
+  maxLogFileSizeBytes: {type: 'number', defaultValue: 0},
+  unsafeMode: {type: 'boolean', defaultValue: false},
+}
+
 // TODO CLEAN
 // TODO SafelySet object props
 class Wrinkle {
-  #toFile;
-  #logDir;
-  #fileDateTimeFormat;
-  #logDateTimeFormat;
-  #level;
-  #maxLogFileSizeBytes;
-  #unsafeMode;
-  #extension;
-  #maxLogFileAge;
-  #allowedLogFuncLevels;
-  #lastLogFileName;
-  #sizeVersion;
-  #rolloverSize;
-  #logFileStream: WriteStream | null;
+  #toFile: boolean;
+  #logDir: string;
+  #fileDateTimeFormat: string;
+  #logDateTimeFormat: string;
+  #level: 'debug' | 'info' | 'warn' | 'error';
+  #maxLogFileSizeBytes: number;
+  #unsafeMode: boolean;
+  #extension: string;
+  #maxLogFileAge: string;
+  #allowedLogFuncLevels: string[];
+  #lastLogFileName: string = '';
+  #sizeVersion: number = 1;
+  #rolloverSize: number = 0;
+  #logFileStream: WriteStream | null = null;
   #lastWroteFileName = '';
 
   constructor(opts?: WrinkleOptions) {
-    const {
-      toFile,
-      extension,
-      logDir = '',
-      maxLogFileAge,
-      logLevel,
-      fileDateTimeFormat,
-      logDateTimeFormat,
-      maxLogFileSizeBytes,
-      unsafeMode,
-    } = opts || {};
-    this.#toFile = !!toFile;
-    this.#logDir = this.#setLogDir(logDir);
-    this.#fileDateTimeFormat = fileDateTimeFormat || 'LL-dd-yyyy';
-    this.#logDateTimeFormat = logDateTimeFormat || 'LL-dd-yyyy HH:mm:ss.SS';
-    this.#level =
-      logLevel || (process.env.NODE_ENV === 'production' ? 'error' : 'debug'); // test will be debug as well
-    this.#maxLogFileSizeBytes = maxLogFileSizeBytes || null;
-    this.#unsafeMode = !!unsafeMode;
-    this.#extension = extension || '.log';
-    this.#maxLogFileAge =
-      maxLogFileAge && typeof maxLogFileAge === 'string'
-        ? maxLogFileAge.trim().toLowerCase()
-        : null;
+
+
+    this.#toFile = this.#safelySet('toFile', opts);
+    this.#logDir = this.#safelySet('logDir', opts);
+    this.#fileDateTimeFormat = this.#safelySet('fileDateTimeFormat', opts);
+    this.#logDateTimeFormat = this.#safelySet('logDateTimeFormat', opts);
+    this.#level = this.#safelySet('logLevel', opts, process.env.NODE_ENV === 'production' ? 'error' : 'debug'), // test will be debug as well);
+    this.#maxLogFileSizeBytes = this.#safelySet('maxLogFileSizeBytes', opts);
+    this.#unsafeMode = this.#safelySet('unsafeMode', opts);
+    this.#extension = this.#safelySet('extension', opts);
+    this.#maxLogFileAge = this.#safelySet('maxLogFileAge', opts);
+
     // set allowed log func levels
     this.#allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce(
       (
@@ -79,11 +80,6 @@ class Wrinkle {
       },
       []
     );
-    this.#lastLogFileName = '';
-    this.#sizeVersion = 1;
-    this.#rolloverSize = 0;
-
-    this.#logFileStream = null;
 
     if (this.#toFile) {
       // create the log directory up front. I'd rather fail creating this immediately,
@@ -92,13 +88,43 @@ class Wrinkle {
       this.#cleanOutOfDateLogFiles();
       this.#setLastWroteFileName();
     }
+
   }
 
-  #setLogDir(logDir: string) {
-    if (logDir) {
-      return logDir.endsWith('/') ? logDir : logDir + '/';
+  #safelySet(key: string, opts?: WrinkleOptions, dynamicDefault?: any) {
+    const {type, oneOf = [], toLowerCase = false, defaultValue = dynamicDefault, endsWith} = safeOptionsConfig[key];
+    if (!opts) return defaultValue;
+    const optsValue = opts[key];
+    if (!optsValue) return defaultValue;
+    let cleanedValue: any;
+    if (type === 'string'){
+      if (typeof optsValue === type) {
+        let malleableValue = optsValue.trim();
+        if (toLowerCase) {
+          malleableValue = malleableValue.toLowerCase();
+        }
+        if (endsWith) {
+          malleableValue = malleableValue.endsWith('/') ? malleableValue : `${malleableValue}/`;
+        }
+        if (oneOf.length){
+          if (!oneOf.includes(malleableValue)){
+            this.#writeAndExit(`Error: WrinkleOption: '${key}', Value: '${optsValue}' must be one of: '${oneOf.toString()}'. Exiting . . .`);
+          }
+        }
+        
+        cleanedValue = malleableValue;
+      } else {
+        this.#writeAndExit(`Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`);
+      }
+    } else {
+      if (typeof optsValue === type) {
+        cleanedValue = optsValue;
+      } else {
+        this.#writeAndExit(`Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`);
+      }
     }
-    return './logs/';
+
+    return !cleanedValue && defaultValue !== undefined ? defaultValue : cleanedValue;
   }
 
   #setLastWroteFileName() {
@@ -209,11 +235,18 @@ class Wrinkle {
     return fileNameDate;
   }
 
-  #writeError(text: string) {
-    // TODO write the error (text, error)...
+  #writeError(text: string, exit?: boolean) {
     process.stderr.write(
-      `${format(Date.now(), this.#logDateTimeFormat)} [wrinkle]: ${text}\n`
+      `${format(Date.now(), this.#logDateTimeFormat)} [wrinkle]: ${text}\n`,
+      () => {
+        if (exit) process.exit(1);
+      }
     );
+  }
+
+  #writeAndExit(errorText: string) {
+    process.exitCode = 1;
+    this.#writeError(errorText, true);
   }
 
   #makeLogDir() {
@@ -221,12 +254,9 @@ class Wrinkle {
       !this.#unsafeMode &&
       (this.#logDir.startsWith('/') || this.#logDir.includes('..'))
     ) {
-      this.#writeError(
-        `logDir: '${
-          this.#logDir
-        }' is not a safe path. Set option 'unsafeMode: true' to ignore this check. Exiting...`
-      );
-      process.exitCode = 1;
+      this.#writeAndExit( `logDir: '${
+        this.#logDir
+      }' is not a safe path. Set option 'unsafeMode: true' to ignore this check. Exiting...`)
       return;
     }
 
@@ -234,12 +264,9 @@ class Wrinkle {
       try {
         mkdirSync(this.#logDir);
       } catch (err) {
-        this.#writeError(
-          `Encountered an error while attempting to create directory: '${
-            this.#logDir
-          }'`
-        );
-        process.exitCode = 1;
+        this.#writeAndExit(`Encountered an error while attempting to create directory: '${
+          this.#logDir
+        }'. Exiting...`)
       }
     }
   }

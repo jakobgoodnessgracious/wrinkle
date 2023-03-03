@@ -4,9 +4,10 @@
   "description": "Simple console and file logger.",
   "scripts": {
     "test": "jest --silent=false",
-    "watch-test": "jest --watch --silent=false",
+    "test:watch": "jest --watch --silent=false",
     "publish-safely": "npm run build && npm test && npm publish",
-    "build": "tsup index.ts --format cjs,esm --dts --clean"
+    "build": "tsup index.ts --format cjs,esm --dts --clean",
+    "build:watch": "tsup index.ts --format cjs,esm --dts --clean --watch"
   },
   "repository": {
     "type": "git",
