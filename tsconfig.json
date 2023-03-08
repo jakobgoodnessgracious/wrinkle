@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -10,13 +10,8 @@
     "target": "ESNext",
     "declaration": true,
     "inlineSourceMap": false,
-    "listFiles": false,
-    "listEmittedFiles": false,
-    "baseUrl": ".",
     "moduleResolution": "node",
     "isolatedModules": true,
-    "traceResolution": false,
-    "rootDir": ".",
     "outDir": "./dist",
     "sourceMap": true,
     "typeRoots": ["./dist/index.d.ts"],
