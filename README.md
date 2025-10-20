@@ -2,6 +2,17 @@
 
 Simple console and file logging utility.
 
+
+## [2.0.0] - 2025-10-19
+### Changed
+- Updated internal `#safelySet()` logic to better support `object` types (e.g., `utilInspectConfig`).
+- `object` options are now shallow-merged with defaults instead of fully replaced.
+- Improved runtime type validation for all config options.
+
+### Potential Breaking Changes
+- Where you previously had to use JSON.stringify(object), this may no longer work as expected
+
+
 ## Install
 
 ```js
@@ -22,8 +33,8 @@ logger.info('All cogs started successfully.');
 logger.warn('Something is smoldering, somewhere. . .');
 logger.error('The flames, oh the flames!');
 
-// use json stringify for objects
-logger.debug('cog', JSON.stringify({ rotations: 9372, screeches: 1941 }));
+// no longer need to use json.stringify, objects will be viewable by default
+logger.debug('cog', { rotations: 9372, screeches: 1941 });
 ```
 
 ## Full Setup
@@ -48,7 +59,7 @@ Import it where needed
 const logger = require('<pathToLogger>/logger');
 
 // do logging
-logger.debug('Res body logging middleware says:,', JSON.stringify(body));
+logger.debug('Res body logging middleware says:,', body);
 ```
 
 ## Other Usage
