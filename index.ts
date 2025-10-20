@@ -19,8 +19,9 @@ import {
   differenceInWeeks,
 } from 'date-fns';
 import { WrinkleOptions } from './types';
+import util, { InspectOptions } from 'util';
 
-type SafeDefaultValue = boolean | string | number;
+type SafeDefaultValue = boolean | string | number | object;;
 
 type SafeOptionConfig = {
   [key: string]: {
@@ -29,6 +30,7 @@ type SafeOptionConfig = {
     toLowerCase?: boolean;
     defaultValue?: SafeDefaultValue;
     endsWith?: string;
+    utilInspectConfig?: InspectOptions;
   };
 };
 const safeOptionsConfig: SafeOptionConfig = {
@@ -42,6 +44,7 @@ const safeOptionsConfig: SafeOptionConfig = {
   logDateTimeFormat: { type: 'string', defaultValue: 'LL-dd-yyyy HH:mm:ss.SS' },
   maxLogFileSizeBytes: { type: 'number', defaultValue: 0 },
   unsafeMode: { type: 'boolean', defaultValue: false },
+  utilInspectConfig: { type: 'object' },
 };
 
 // TODO CLEAN
@@ -62,6 +65,7 @@ class Wrinkle {
   #rolloverSize = 0;
   #logFileStream: WriteStream | null = null;
   #lastWroteFileName = '';
+  #utilInspectConfig: InspectOptions;
 
   constructor(opts?: WrinkleOptions) {
     this.#toFile = this.#safelySet('toFile', opts);
@@ -80,6 +84,13 @@ class Wrinkle {
     this.#unsafeMode = this.#safelySet('unsafeMode', opts);
     this.#extension = this.#safelySet('extension', opts);
     this.#maxLogFileAge = this.#safelySet('maxLogFileAge', opts);
+    this.#utilInspectConfig = this.#safelySet('utilInspectConfig', opts, {
+      depth: 2,         // match console.log default
+      colors: true,
+      compact: true,    // use single line if short enough
+      breakLength: 60,  // max length before wrapping
+      maxArrayLength: null
+    });
 
     // set allowed log func levels
     this.#allowedLogFuncLevels = ['debug', 'info', 'warn', 'error'].reduce(
@@ -118,49 +129,58 @@ class Wrinkle {
       defaultValue = dynamicDefault,
       endsWith,
     } = safeOptionsConfig[key];
-    if (!opts) return defaultValue;
-    const optsValue = opts[key];
-    if (!optsValue) return defaultValue;
-    let cleanedValue;
-    if (type === 'string') {
-      if (typeof optsValue === type) {
-        let malleableValue = optsValue.trim();
-        if (toLowerCase) {
-          malleableValue = malleableValue.toLowerCase();
-        }
-        if (endsWith) {
-          malleableValue = malleableValue.endsWith('/')
-            ? malleableValue
-            : `${malleableValue}/`;
-        }
-        if (oneOf.length) {
-          if (!oneOf.includes(malleableValue)) {
-            this.#writeAndExit(
-              `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be one of: '${oneOf.toString()}'. Exiting . . .`
-            );
-          }
-        }
 
-        cleanedValue = malleableValue;
-      } else {
-        this.#writeAndExit(
-          `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`
-        );
-      }
-    } else {
-      if (typeof optsValue === type) {
-        cleanedValue = optsValue;
-      } else {
-        this.#writeAndExit(
-          `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type: '${type}'. Exiting . . .`
-        );
-      }
+    const optsValue = opts?.[key];
+
+    // No user value? Return default
+    if (optsValue === undefined || optsValue === null) {
+      return defaultValue;
     }
 
-    return !cleanedValue && defaultValue !== undefined
-      ? defaultValue
-      : cleanedValue;
+    let cleanedValue;
+
+    if (type === 'string') {
+      if (typeof optsValue !== 'string') {
+        this.#writeAndExit(
+          `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type string. Exiting...`
+        );
+      }
+      let val = optsValue.trim();
+      if (toLowerCase) val = val.toLowerCase();
+      if (endsWith) val = val.endsWith('/') ? val : val + '/';
+      if (oneOf.length && !oneOf.includes(val)) {
+        this.#writeAndExit(
+          `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be one of: '${oneOf.join(
+            ', '
+          )}'. Exiting...`
+        );
+      }
+      cleanedValue = val;
+    } else if (type === 'number' || type === 'boolean') {
+      if (typeof optsValue !== type) {
+        this.#writeAndExit(
+          `Error: WrinkleOption: '${key}', Value: '${optsValue}' must be of type ${type}. Exiting...`
+        );
+      }
+      cleanedValue = optsValue;
+    } else if (type === 'object') {
+      if (typeof optsValue !== 'object' || Array.isArray(optsValue)) {
+        this.#writeAndExit(
+          `Error: WrinkleOption: '${key}', Value must be an object. Exiting...`
+        );
+      }
+      // Merge user object with default
+      cleanedValue = { ...(defaultValue as object), ...optsValue };
+    } else {
+      // unsupported type
+      this.#writeAndExit(
+        `Error: WrinkleOption: '${key}' has unsupported type '${type}'. Exiting...`
+      );
+    }
+
+    return cleanedValue;
   }
+
 
   #setLastWroteFileName() {
     // TODO simplify
@@ -186,9 +206,41 @@ class Wrinkle {
     }
   }
 
-  #formatLog(logLevel: string) {
+  #inspectDual(obj: any) {
+    // console version with colors
+    const colorOutput = util.inspect(obj, this.#utilInspectConfig);
+
+    // file version: strip ANSI codes from colorOutput
+    const rawOutput = colorOutput.replace(/\u001b\[[0-9;]*m/g, '');
+
+    return { color: colorOutput, raw: rawOutput };
+  }
+
+  #formatLogPrefix(logLevel: string) {
     return `${format(Date.now(), this.#logDateTimeFormat)} ${logLevel}:`;
   }
+
+  #formatLog(prefix: string, args: any[]) {
+    const consoleParts: string[] = [];
+    const fileParts: string[] = [];
+
+    for (const arg of args) {
+      if (typeof arg === 'string') {
+        consoleParts.push(arg);
+        fileParts.push(arg);
+      } else {
+        const { color, raw } = this.#inspectDual(arg);
+        consoleParts.push(color);
+        fileParts.push(raw);
+      }
+    }
+
+    const consoleOutput = prefix + ' ' + consoleParts.join(' ') + '\n';
+    const rawOutput = prefix + ' ' + fileParts.join(' ') + '\n';
+
+    return { color: consoleOutput, raw: rawOutput };
+  }
+
 
   #getCurrentLogPath = () => {
     return `${this.#logDir}${format(Date.now(), this.#fileDateTimeFormat)}`;
@@ -251,8 +303,8 @@ class Wrinkle {
     let subStringedFileName = fileName.substring(
       0,
       fileName.length -
-        this.#extension.length -
-        (this.#maxLogFileSizeBytes ? ('.' + this.#sizeVersion).length : 0)
+      this.#extension.length -
+      (this.#maxLogFileSizeBytes ? ('.' + this.#sizeVersion).length : 0)
     );
     let fileNameDate = parse(
       subStringedFileName,
@@ -292,8 +344,7 @@ class Wrinkle {
       (this.#logDir.startsWith('/') || this.#logDir.includes('..'))
     ) {
       this.#writeAndExit(
-        `logDir: '${
-          this.#logDir
+        `logDir: '${this.#logDir
         }' is not a safe path. Set option 'unsafeMode: true' to ignore this check. Exiting...`
       );
       return;
@@ -304,8 +355,7 @@ class Wrinkle {
         mkdirSync(this.#logDir);
       } catch (err) {
         this.#writeAndExit(
-          `Encountered an error while attempting to create directory: '${
-            this.#logDir
+          `Encountered an error while attempting to create directory: '${this.#logDir
           }'. Exiting...`
         );
       }
@@ -371,25 +421,26 @@ class Wrinkle {
     }
   }
 
-  #handleLog(level: string, ...textAsParams: string[]) {
+  #handleLog(level: string, ...args: any[]) {
     if (process.exitCode) return;
     if (!this.#guardLevel(level)) return;
 
-    const toWrite = `${this.#formatLog(level)} ${textAsParams.join(' ')}\n`;
+    const prefix = this.#formatLogPrefix(level);
+    const { color, raw } = this.#formatLog(prefix, args);
 
     // dont use stderr for error level, since the stderr stream write time may be out of sync with stdout
-    process.stdout.write(toWrite);
+    process.stdout.write(color);
 
     if (this.#toFile) {
-      this.#writeToFile(toWrite);
+      this.#writeToFile(raw);
     }
   }
 
   create() {
     this.#logFileStream = createWriteStream(
       this.#lastLogFileName ||
-        this.#lastWroteFileName ||
-        this.#getCurrentLogPath() + this.#extension,
+      this.#lastWroteFileName ||
+      this.#getCurrentLogPath() + this.#extension,
       { flags: 'a' }
     );
   }
@@ -402,20 +453,20 @@ class Wrinkle {
     if (this.#logFileStream) this.#logFileStream.end();
   }
 
-  debug(...textAsParams: string[]) {
-    this.#handleLog('debug', ...textAsParams);
+  debug(...args: any[]) {
+    this.#handleLog('debug', ...args);
   }
 
-  info(...textAsParams: string[]) {
-    this.#handleLog('info', ...textAsParams);
+  info(...args: any[]) {
+    this.#handleLog('info', ...args);
   }
 
-  warn(...textAsParams: string[]) {
-    this.#handleLog('warn', ...textAsParams);
+  warn(...args: any[]) {
+    this.#handleLog('warn', ...args);
   }
 
-  error(...textAsParams: string[]) {
-    this.#handleLog('error', ...textAsParams);
+  error(...args: any[]) {
+    this.#handleLog('error', ...args);
   }
 }
 export type { WrinkleOptions };
