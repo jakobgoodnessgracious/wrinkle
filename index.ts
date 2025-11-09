@@ -183,7 +183,6 @@ class Wrinkle {
 
 
   #setLastWroteFileName() {
-    // TODO simplify
     let topVersioned = '';
     try {
       [topVersioned] = readdirSync(this.#logDir)
@@ -202,7 +201,18 @@ class Wrinkle {
       ? `${this.#logDir}${topVersioned}`
       : '';
     if (this.#lastWroteFileName) {
+      // Get actual file size instead of relying on incremental tracking
       this.#rolloverSize = this.#getFilesizeInBytes(this.#lastWroteFileName);
+
+      // Parse and restore version number from existing file
+      // Example: "01-09-2025.2.log" -> extract version 2, set #sizeVersion to 3 (next version)
+      if (this.#maxLogFileSizeBytes) {
+        const versionMatch = topVersioned.match(/\.(\d+)\.log$/);
+        if (versionMatch) {
+          const currentVersion = parseInt(versionMatch[1], 10);
+          this.#sizeVersion = currentVersion + 1;
+        }
+      }
     }
   }
 
@@ -364,9 +374,14 @@ class Wrinkle {
 
   #getFilesizeInBytes(filename: string) {
     if (!existsSync(filename)) return 0;
-    const stats = statSync(filename);
-    const fileSizeInBytes = stats.size;
-    return fileSizeInBytes;
+    try {
+      const stats = statSync(filename);
+      // Convert BigInt to Number to avoid type mixing issues
+      const fileSizeInBytes = Number(stats.size);
+      return fileSizeInBytes;
+    } catch (e) {
+      return 0;
+    }
   }
 
   #writeToFile(text: string) {
@@ -379,7 +394,6 @@ class Wrinkle {
         this.#sizeVersion = 1;
         this.#rolloverSize = 0;
       } else {
-        // TODO simplify how the logic for setting this works the ||
         const textSizeBytes = Buffer.byteLength(text, 'utf8');
         this.#rolloverSize += textSizeBytes;
         if (
@@ -390,7 +404,6 @@ class Wrinkle {
           currentLogFileName = currentLogFileName + '.' + this.#sizeVersion;
           this.#sizeVersion += 1;
         } else {
-          // TODO double check the || statement makes sense
           [currentLogFileName] = (
             this.#lastLogFileName || this.#lastWroteFileName
           ).split(this.#extension);

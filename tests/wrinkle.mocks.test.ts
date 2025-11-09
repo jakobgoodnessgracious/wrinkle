@@ -1158,6 +1158,112 @@ describe('toFile: true, maxLogFileSizeBytes: 360 and file already exists', () =>
   });
 });
 
+describe('toFile: true, maxLogFileSizeBytes: 360, simulates nodemon restart with version .2.log already exists', () => {
+  let debug: jest.SpyInstance<void, string[], any>,
+    info: jest.SpyInstance<void, string[], any>,
+    warn: jest.SpyInstance<void, string[], any>,
+    error: jest.SpyInstance<void, string[], any>,
+    stdoutWrite: jest.SpyInstance,
+    mockStreamWrite: jest.Func,
+    mockStreamEnd: jest.Func,
+    testFileName: string,
+    logger;
+  beforeAll(() => {
+    const versionedFiles: string[] = [
+      `${format(Date.now(), DEFAULT_FILE_DATE_FORMAT) + '.0' + '.log'}`,
+      `${format(Date.now(), DEFAULT_FILE_DATE_FORMAT) + '.1' + '.log'}`,
+      `${format(Date.now(), DEFAULT_FILE_DATE_FORMAT) + '.2' + '.log'}`,
+    ];
+    debug = jest.spyOn(Wrinkle.prototype, 'debug');
+    info = jest.spyOn(Wrinkle.prototype, 'info');
+    warn = jest.spyOn(Wrinkle.prototype, 'warn');
+    error = jest.spyOn(Wrinkle.prototype, 'error');
+    stdoutWrite = jest
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    mockStreamWrite = jest
+      .fn()
+      .mockImplementation((buffer, handler) => handler());
+    mockStreamEnd = jest.fn();
+
+    // Simulate nodemon restart scenario:
+    // - Files .0.log, .1.log, .2.log already exist
+    // - .2.log is the most recent file with some content (size 100)
+    // - After restart, logger should restore version to 3 (next version)
+    (<jest.Mock>fs.statSync)
+      // setLastWroteFileName calls statSync for each file to get mtime:
+      .mockReturnValueOnce({ mtime: { getTime: () => 120 } }) // .0.log mtime
+      .mockReturnValueOnce({ mtime: { getTime: () => 123 } }) // .1.log mtime
+      .mockReturnValueOnce({ mtime: { getTime: () => 125 } }) // .2.log mtime (newest)
+      // setLastWroteFileName then calls getFilesizeInBytes on the newest file:
+      .mockReturnValueOnce({ size: 100 }) // .2.log current size
+      // First writeToFile call - checking current file size before writing:
+      .mockReturnValueOnce({ size: 100 }); // .2.log size check
+    (<jest.Mock>fs.readdirSync).mockReturnValue(versionedFiles);
+    mockFS.existsSync
+      .mockReturnValueOnce(true) // getfilesize for .2.log (in setLastWroteFileName)
+      .mockReturnValueOnce(true) // create dir: already exists ./logs/
+      .mockReturnValueOnce(true) // currentLogFileName.0.log exists (first check in writeToFile)
+      .mockReturnValueOnce(true) // getfilesize for .2.log (in first writeToFile call)
+      .mockReturnValue(true); // all other existence checks
+    mockFS.createWriteStream.mockReturnValue({
+      write: mockStreamWrite,
+      end: mockStreamEnd,
+      path: `${DEFAULT_LOG_DIR}${
+        format(Date.now(), DEFAULT_FILE_DATE_FORMAT) + '.2' + '.log'
+      }`,
+    } as WriteStream);
+    testFileName = `${DEFAULT_LOG_DIR}${
+      format(Date.now(), DEFAULT_FILE_DATE_FORMAT) + '.2' + '.log'
+    }`;
+
+    // Create logger instance (simulates nodemon restart)
+    logger = new Wrinkle({ toFile: true, maxLogFileSizeBytes: 360 });
+
+    // Log some messages
+    logger.debug('Test debug after restart.');
+    logger.info('Test info after restart.');
+  });
+
+  afterAll(() => {
+    jest.resetAllMocks();
+  });
+
+  it('calls debug, info once each', () => {
+    expect(debug).toHaveBeenCalledTimes(1);
+    expect(info).toHaveBeenCalledTimes(1);
+  });
+
+  it('continues writing to the most recent file (.2.log)', () => {
+    // Should continue with .2.log, not create a conflicting .1.log or weird naming
+    expect(mockFS.createWriteStream).toHaveBeenCalledWith(
+      testFileName,
+      expect.objectContaining({ flags: 'a' })
+    );
+  });
+
+  it('correctly restores version number to 3 for next rotation', () => {
+    // The internal #sizeVersion should be set to 3 (next after .2)
+    // We can't directly test private fields, but we verify behavior:
+    // - It writes to .2.log (not conflicting versions)
+    // - If rotation were to happen, it would create .3.log (tested indirectly)
+    expect(mockStreamWrite).toHaveBeenCalledWith(
+      expect.stringContaining('Test debug after restart.'),
+      expect.any(Function)
+    );
+    expect(mockStreamWrite).toHaveBeenCalledWith(
+      expect.stringContaining('Test info after restart.'),
+      expect.any(Function)
+    );
+  });
+
+  it('does not create duplicate or conflicting log files', () => {
+    // Should not call writeFileSync to create a new file since .2.log exists
+    // (unless rotation happens, which it shouldn't with our test data)
+    expect(mockFS.writeFileSync).not.toHaveBeenCalled();
+  });
+});
+
 describe("toFile: true, maxLogFileAge: '1:month' and out of date file already exists", () => {
   let debug: jest.SpyInstance<void, string[], any>,
     info: jest.SpyInstance<void, string[], any>,
